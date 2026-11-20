@@ -1,0 +1,1356 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VestSeller · Arquitetura viva</title>
+<meta name="description" content="A arquitetura do e-commerce VestSeller em camadas 3D: módulos, núcleo próprio, banco, integrações e código real, atualizada automaticamente a cada mudança.">
+<meta property="og:title" content="VestSeller · Arquitetura viva">
+<meta property="og:description" content="Explore em 3D como a plataforma é montada: camadas, módulos, dados e integrações, gerado direto do código.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#07080c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2307080c'/%3E%3Cpath d='M6 20l10 5 10-5M6 15l10 5 10-5M16 5L6 10l10 5 10-5z' fill='none' stroke='%232dd4bf' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Gerado por scripts/gerar-documentacao.mjs a partir de scripts/docs/arquitetura-template.html. Não edite o arquivo gerado. -->
+<script>
+  // Visual escolhido antes de pintar: ?visual=minimalista|futurista no link, senão o último usado.
+  (function () {
+    var q = new URLSearchParams(location.search).get('visual'), v = null;
+    if (q) v = /^min/i.test(q) ? 'minimal' : 'futurista';
+    if (!v) { try { v = localStorage.getItem('arquitetura-visual'); } catch (e) {} }
+    if (v === 'minimal') document.documentElement.dataset.visual = 'minimal';
+  })();
+</script>
+<style>
+:root {
+  --fundo: #07080c;
+  --fundo-2: #0d0f16;
+  --vidro: rgb(20 23 33 / .72);
+  --vidro-forte: rgb(16 18 26 / .94);
+  --borda: rgb(255 255 255 / .09);
+  --borda-forte: rgb(255 255 255 / .18);
+  --texto: #eef0f6;
+  --texto-2: #a3a8b8;
+  --texto-3: #6b7185;
+  --experiencia: #c084fc;
+  --extensoes: #f4f4f5;
+  --nucleo: #e2e8f0;
+  --dados: #60a5fa;
+  --admin: #8b8cff;
+  --loja: #2dd4bf;
+  --marketing: #fb7185;
+  --integracao: #fbbf24;
+  --externo: #a1a1aa;
+  --sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: radial-gradient(1200px 700px at 50% 38%, #141a2b 0%, var(--fundo) 62%) fixed, var(--fundo);
+  color: var(--texto); font: 14px/1.5 var(--sans); overflow: hidden; -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; }
+.mono { font-family: var(--mono); }
+
+/* ---------- fundo vivo ---------- */
+#estrelas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: .55; }
+
+/* ---------- topo ---------- */
+.topo {
+  position: fixed; inset: 16px 16px auto 16px; z-index: 20; display: flex; align-items: center; gap: 12px; pointer-events: none;
+}
+.topo > * { pointer-events: auto; }
+.marca { display: flex; align-items: center; gap: 12px; }
+.marca svg { width: 36px; height: 36px; flex: none; }
+.marca h1 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+.marca p { margin: 0; color: var(--texto-2); font-size: 12px; }
+.acoes { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.botao {
+  height: 38px; padding: 0 14px; border-radius: 11px; border: 1px solid var(--borda); background: var(--vidro);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 500; transition: border-color .2s, background .2s;
+}
+.botao:hover { border-color: var(--borda-forte); }
+.botao.primario { background: var(--texto); color: var(--fundo); border-color: transparent; font-weight: 600; }
+.botao svg { width: 16px; height: 16px; }
+.botao:focus-visible, .peca:focus-visible, .orbe:focus-visible, .chip-ir:focus-visible { outline: 2px solid var(--loja); outline-offset: 3px; }
+
+.trilha { position: fixed; top: 70px; left: 16px; z-index: 20; display: flex; gap: 6px; align-items: center; font-size: 12.5px; color: var(--texto-2); }
+.trilha button { background: none; border: 0; padding: 2px 0; cursor: pointer; color: var(--texto-2); }
+.trilha button:hover { color: var(--texto); }
+.trilha b { color: var(--texto); font-weight: 600; }
+
+/* ---------- números ---------- */
+.numeros { position: fixed; left: 16px; bottom: 16px; z-index: 15; display: flex; gap: 8px; flex-wrap: wrap; max-width: min(760px, calc(100% - 32px)); }
+.numero {
+  background: var(--vidro); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--borda);
+  border-radius: 13px; padding: 8px 13px; min-width: 86px;
+}
+.numero b { display: block; font-size: 21px; font-weight: 700; letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.numero span { font-size: 11.5px; color: var(--texto-2); }
+.vivo {
+  position: fixed; right: 16px; bottom: 16px; z-index: 15; width: 260px; background: var(--vidro); backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px); border: 1px solid var(--borda); border-radius: 13px; padding: 10px 13px;
+}
+.vivo-topo { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--texto-2); }
+.vivo-topo b { color: var(--texto); font-weight: 600; }
+.pulso { width: 8px; height: 8px; border-radius: 50%; background: var(--loja); box-shadow: 0 0 0 0 rgb(45 212 191 / .6); animation: pulso 2s infinite; }
+@keyframes pulso { 70% { box-shadow: 0 0 0 8px rgb(45 212 191 / 0); } 100% { box-shadow: 0 0 0 0 rgb(45 212 191 / 0); } }
+.vivo svg { display: block; width: 100%; height: 34px; margin-top: 8px; }
+.vivo small { display: block; color: var(--texto-3); font-size: 11px; margin-top: 4px; }
+
+.controle { position: fixed; right: 16px; top: 50%; transform: translateY(-50%); z-index: 15; display: flex; flex-direction: column; gap: 8px; }
+.controle .botao { width: 40px; padding: 0; justify-content: center; }
+.explodir {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 15; display: flex; align-items: center; gap: 10px;
+  background: var(--vidro); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--borda); border-radius: 999px;
+  padding: 6px 14px; font-size: 12px; color: var(--texto-2);
+}
+.explodir input { width: 120px; accent-color: var(--loja); }
+
+/* ---------- cena 3D ---------- */
+.cena { position: fixed; inset: 0; perspective: 2400px; perspective-origin: 50% 42%; touch-action: none; cursor: grab; }
+.cena.arrastando { cursor: grabbing; }
+.mundo {
+  position: absolute; left: 50%; top: 52%; width: 0; height: 0; transform-style: preserve-3d;
+  transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(var(--zoom, 1)) rotateX(var(--rx, 58deg)) rotateZ(var(--rz, -38deg)) translateZ(var(--tz, 0px));
+}
+.mundo.voando { transition: transform 1.1s cubic-bezier(.2,.8,.2,1); }
+.camada {
+  position: absolute; left: -450px; top: -280px; width: 900px; height: 560px; border-radius: 30px; transform-style: preserve-3d;
+  transform: translateZ(calc(var(--i) * var(--gap, 150px) - 1.5 * var(--gap, 150px)));
+  transition: transform .9s cubic-bezier(.2,.8,.2,1), opacity .6s;
+}
+.placa {
+  position: absolute; inset: 0; border-radius: 30px; cursor: pointer;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--cor) 14%, transparent), color-mix(in srgb, var(--cor) 3%, transparent) 60%),
+    repeating-linear-gradient(0deg, rgb(255 255 255 / .025) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / .025) 0 1px, transparent 1px 28px),
+    rgb(12 14 22 / .78);
+  border: 1px solid color-mix(in srgb, var(--cor) 45%, transparent);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / .4), 0 0 60px -10px color-mix(in srgb, var(--cor) 35%, transparent), inset 0 0 80px -30px color-mix(in srgb, var(--cor) 30%, transparent);
+  transition: border-color .3s, box-shadow .3s;
+}
+.camada:hover .placa, .camada.focada .placa { border-color: color-mix(in srgb, var(--cor) 85%, transparent); }
+.rotulo-camada { position: absolute; right: calc(100% + 36px); top: 26px; width: 300px; text-align: right; pointer-events: none; }
+.rotulo-camada p { margin-left: auto; }
+.rotulo-camada .n { font: 500 12px var(--mono); color: var(--cor); letter-spacing: .12em; }
+.rotulo-camada h2 { margin: 2px 0 0; font-size: 30px; font-weight: 800; letter-spacing: -.035em; line-height: 1; }
+.rotulo-camada p { margin: 6px 0 0; color: var(--texto-2); font-size: 13px; max-width: 330px; }
+.camada.longe { opacity: .07; pointer-events: none; }
+.camada.longe .feixe, .camada.longe .fluxo { display: none; }
+
+.peca {
+  position: absolute; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--cor) 50%, transparent);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--cor) 22%, rgb(20 23 34)), rgb(14 16 24));
+  box-shadow: 0 10px 30px -12px rgb(0 0 0 / .8), 0 0 24px -8px color-mix(in srgb, var(--cor) 50%, transparent);
+  padding: 12px 14px; cursor: pointer; transform: translateZ(3px); transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .3s, opacity .3s;
+  text-align: left; color: var(--texto); transform-style: preserve-3d;
+}
+.peca:hover, .peca.ativa { transform: translateZ(26px); box-shadow: 0 30px 40px -18px rgb(0 0 0 / .9), 0 0 36px -4px color-mix(in srgb, var(--cor) 70%, transparent); }
+.peca b { display: block; font-size: 14.5px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; }
+.peca small { display: block; color: var(--texto-2); font-size: 11.5px; margin-top: 3px; }
+.peca .marca-cor { position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0; background: var(--cor); }
+.peca.apagada { opacity: .25; }
+.peca-grande { padding: 18px 20px; }
+.peca-grande b { font-size: 18px; }
+.peca-grande .valor { font-size: 34px; font-weight: 800; letter-spacing: -.04em; line-height: 1; margin-top: 10px; display: block; }
+.ficha-tabela {
+  position: absolute; height: 19px; border-radius: 6px; padding: 0 7px; font: 500 10.5px/19px var(--mono); white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; color: color-mix(in srgb, var(--cor) 80%, white); background: color-mix(in srgb, var(--cor) 14%, rgb(10 12 20));
+  border: 1px solid color-mix(in srgb, var(--cor) 35%, transparent); transform: translateZ(2px);
+}
+.gatilho-marca { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #fde047; box-shadow: 0 0 12px 3px rgb(253 224 71 / .55); transform: translateZ(4px); animation: piscar 2.4s ease-in-out infinite; }
+@keyframes piscar { 50% { opacity: .35; } }
+
+/* feixes verticais entre camadas */
+.feixe {
+  position: absolute; width: 2px; transform-origin: 50% 0; pointer-events: none;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--cor) 0%, transparent), color-mix(in srgb, var(--cor) 55%, transparent));
+}
+.feixe.desce { transform: translateZ(0) rotateX(-90deg); }
+.feixe.sobe { transform: translateZ(0) rotateX(90deg); }
+.feixe i {
+  position: absolute; left: -2px; width: 6px; height: 22px; border-radius: 3px; top: 0;
+  background: linear-gradient(to bottom, transparent, var(--cor)); box-shadow: 0 0 12px 2px var(--cor);
+  animation: correr var(--dur, 2.4s) linear infinite; animation-delay: var(--atraso, 0s);
+}
+@keyframes correr { from { transform: translateY(-22px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } to { transform: translateY(var(--h)); opacity: 0; } }
+
+.fluxo { position: absolute; left: -220px; top: -200px; overflow: visible; pointer-events: none; transform: translateZ(1px); }
+.fluxo path { fill: none; stroke-width: 1.6; }
+.fluxo .ligacao { stroke: rgb(255 255 255 / .22); stroke-dasharray: 4 6; }
+.fluxo .externa { stroke: rgb(161 161 170 / .28); stroke-dasharray: 2 6; }
+.fluxo .acesa { stroke: var(--loja); stroke-opacity: .9; stroke-dasharray: none; }
+.orbe {
+  position: absolute; width: 132px; margin-left: -66px; margin-top: -26px; height: 52px; border-radius: 999px; cursor: pointer;
+  border: 1px solid rgb(255 255 255 / .16); background: rgb(24 26 36 / .9); display: flex; align-items: center; gap: 9px; padding: 0 14px;
+  transform: translateZ(10px); transition: transform .3s; color: var(--texto); text-align: left;
+}
+.orbe:hover, .orbe.ativa { transform: translateZ(30px); border-color: var(--externo); }
+.orbe .bola { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--externo); box-shadow: 0 0 14px 2px rgb(161 161 170 / .6); }
+.orbe b { display: block; font-size: 12.5px; line-height: 1.15; }
+.orbe small { display: block; font-size: 10.5px; color: var(--texto-2); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 86px; }
+
+/* ---------- gaveta ---------- */
+.gaveta {
+  position: fixed; top: 16px; right: 16px; bottom: 16px; width: min(460px, calc(100% - 32px)); z-index: 30; display: flex; flex-direction: column;
+  background: var(--vidro-forte); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); border: 1px solid var(--borda); border-radius: 22px;
+  box-shadow: 0 30px 80px -20px rgb(0 0 0 / .8); transform: translateX(calc(100% + 32px)); transition: transform .45s cubic-bezier(.2,.8,.2,1);
+}
+.gaveta.aberta { transform: none; }
+.gaveta-topo { padding: 22px 22px 14px; border-bottom: 1px solid var(--borda); }
+.gaveta-topo .tipo { font: 500 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--cor); }
+.gaveta-topo h3 { margin: 4px 0 0; font-size: 26px; font-weight: 800; letter-spacing: -.035em; line-height: 1.1; }
+.gaveta-topo p { margin: 8px 0 0; color: var(--texto-2); }
+.fechar { position: absolute; top: 16px; right: 16px; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--borda); background: none; cursor: pointer; }
+.gaveta-corpo { flex: 1; overflow: auto; padding: 18px 22px 26px; }
+.gaveta-corpo h4 { margin: 22px 0 9px; font: 500 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--texto-3); }
+.gaveta-corpo h4:first-child { margin-top: 0; }
+.metricas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.metrica { border: 1px solid var(--borda); border-radius: 13px; padding: 10px 12px; background: rgb(255 255 255 / .02); }
+.metrica b { display: block; font-size: 22px; font-weight: 700; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.metrica span { font-size: 11.5px; color: var(--texto-2); }
+.lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.lista li { border: 1px solid var(--borda); border-radius: 12px; padding: 9px 12px; display: flex; gap: 10px; align-items: baseline; background: rgb(255 255 255 / .02); }
+.lista li > div { flex: 1; min-width: 0; }
+.lista .t { font-weight: 600; }
+.lista .s { color: var(--texto-2); font-size: 12.5px; }
+.contagem { font: 500 12px var(--mono); color: var(--loja); white-space: nowrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--borda); border-radius: 999px; padding: 4px 11px; font-size: 12.5px; background: rgb(255 255 255 / .03); }
+.chip .bola { width: 7px; height: 7px; border-radius: 50%; }
+.chip.mono { font-family: var(--mono); font-size: 11.5px; }
+button.chip-ir { cursor: pointer; }
+button.chip-ir:hover { border-color: var(--borda-forte); }
+.codigo { border: 1px solid var(--borda); border-radius: 14px; overflow: hidden; background: #0a0c12; }
+.codigo-topo { display: flex; align-items: center; gap: 6px; padding: 9px 12px; border-bottom: 1px solid var(--borda); font: 11.5px var(--mono); color: var(--texto-3); }
+.codigo-topo i { width: 9px; height: 9px; border-radius: 50%; background: #2a2e3b; }
+.codigo-topo span { margin-left: 6px; }
+.codigo pre { margin: 0; padding: 13px 14px 15px; font: 12px/1.65 var(--mono); overflow-x: auto; color: #cdd3e1; min-height: 60px; white-space: pre; }
+.codigo .cursor { display: inline-block; width: 7px; height: 14px; background: var(--loja); vertical-align: -2px; animation: piscar 1s steps(1) infinite; }
+.k { color: #c792ea; } .s2 { color: #a5e075; } .n { color: #f78c6c; } .c { color: #5c6680; font-style: italic; } .f { color: #82aaff; } .t2 { color: #ffcb6b; }
+.linha-tempo { display: flex; gap: 14px; flex-wrap: wrap; color: var(--texto-2); font-size: 12.5px; }
+.linha-tempo b { color: var(--texto); }
+.vazio { color: var(--texto-3); font-size: 13px; }
+
+/* ---------- apresentação ---------- */
+.legenda {
+  position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%) translateY(20px); z-index: 25; width: min(760px, calc(100% - 32px));
+  text-align: center; opacity: 0; transition: opacity .5s, transform .5s; pointer-events: none;
+}
+.legenda.visivel { opacity: 1; transform: translateX(-50%); }
+.legenda .passo { font: 500 12px var(--mono); color: var(--loja); letter-spacing: .14em; }
+.legenda h2 { margin: 8px 0 0; font-size: clamp(26px, 4.2vw, 46px); font-weight: 800; letter-spacing: -.045em; line-height: 1.05; text-wrap: balance; text-shadow: 0 4px 30px rgb(0 0 0 / .8); }
+.legenda p { margin: 12px auto 0; max-width: 600px; color: var(--texto-2); font-size: clamp(14px, 1.6vw, 17px); text-wrap: pretty; text-shadow: 0 2px 16px rgb(0 0 0 / .9); }
+.barra-tour {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 26; display: none; align-items: center; gap: 10px;
+  background: var(--vidro); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--borda); border-radius: 999px; padding: 6px;
+}
+.apresentando .barra-tour { display: flex; }
+.apresentando .numeros, .apresentando .vivo, .apresentando .explodir, .apresentando .controle, .apresentando .trilha { opacity: 0; pointer-events: none; }
+.numeros, .vivo, .explodir, .controle, .trilha { transition: opacity .4s; }
+.pontos-tour { display: flex; gap: 5px; padding: 0 4px; }
+.pontos-tour i { width: 7px; height: 7px; border-radius: 50%; background: rgb(255 255 255 / .2); transition: background .3s, width .3s; }
+.pontos-tour i.atual { background: var(--loja); width: 20px; border-radius: 4px; }
+.barra-tour .botao { height: 34px; border-radius: 999px; }
+
+@media (min-width: 761px) { .com-gaveta .legenda { left: calc((100% - 490px) / 2); width: min(700px, calc(100% - 530px)); } }
+@media (max-width: 760px) {
+  .marca p, .vivo, .controle, .explodir { display: none; }
+  .marca { min-width: 0; }
+  .marca h1 { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .marca > div { min-width: 0; }
+  .acoes .botao span { display: none; }
+  .acoes .botao.primario span { display: inline; }
+  .numeros { gap: 6px; }
+  .numero { min-width: 0; padding: 6px 10px; }
+  .numero b { font-size: 17px; }
+  .gaveta { top: auto; left: 10px; right: 10px; bottom: 10px; width: auto; height: 68vh; transform: translateY(calc(100% + 20px)); }
+  .legenda { bottom: 70px; }
+  .trilha { top: 62px; }
+}
+.ponto-fluxo { filter: var(--brilho); }
+.vivo .barra { fill: rgb(255 255 255 / .28); }
+.vivo .barra.atual { fill: var(--loja); }
+.botao-visual svg { width: 16px; height: 16px; }
+
+/* ================================================================ mapa mental */
+.modo-mapa .cena, .modo-mapa .controle, .modo-mapa .explodir, .modo-mapa .trilha { display: none; }
+.mapa-mental { position: fixed; inset: 0; overflow: hidden; touch-action: none; cursor: grab; z-index: 5; }
+.mapa-mental.arrastando { cursor: grabbing; }
+.mm-mundo { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.mm-linhas { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; }
+.mm-linhas path { fill: none; stroke: var(--cor); stroke-width: 2; stroke-opacity: .55; stroke-linecap: round; }
+.mm-linhas path.raso { stroke-width: 3.2; stroke-opacity: .7; }
+.mm-no { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 4px; will-change: transform, opacity; }
+.mm-no.lado-esq { flex-direction: row-reverse; }
+.mm-rotulo {
+  display: flex; align-items: center; gap: 8px; height: 100%; width: 100%; padding: 0 12px; border-radius: 11px; cursor: pointer; text-align: left;
+  border: 1px solid color-mix(in srgb, var(--cor) 45%, transparent); background: var(--vidro-forte); color: var(--texto);
+  box-shadow: 0 6px 18px -10px rgb(0 0 0 / .6); transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.mm-no.lado-esq .mm-rotulo { flex-direction: row-reverse; text-align: right; }
+.mm-rotulo:hover { border-color: var(--cor); }
+.mm-rotulo:focus-visible { outline: 2px solid var(--cor); outline-offset: 2px; }
+.mm-rotulo .txt { min-width: 0; flex: 1; display: flex; flex-direction: column; line-height: 1.2; }
+.mm-rotulo .txt b { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mm-rotulo .txt small { font-size: 11px; color: var(--texto-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mm-rotulo .ponta { width: 8px; height: 8px; border-radius: 50%; background: var(--cor); flex: none; }
+.mm-rotulo .qtd {
+  flex: none; min-width: 22px; height: 20px; padding: 0 6px; border-radius: 999px; font: 600 11px/20px var(--mono); text-align: center;
+  background: color-mix(in srgb, var(--cor) 22%, transparent); color: var(--texto); transition: transform .25s;
+}
+.mm-no.aberto .mm-rotulo .qtd { background: transparent; border: 1px solid color-mix(in srgb, var(--cor) 40%, transparent); line-height: 18px; }
+.mm-no.folha .mm-rotulo { cursor: default; border-style: dashed; border-color: color-mix(in srgb, var(--cor) 30%, transparent); background: color-mix(in srgb, var(--vidro-forte) 70%, transparent); box-shadow: none; }
+.mm-no.folha .mm-rotulo .txt b { font-weight: 500; }
+.mm-no.mono .mm-rotulo .txt b { font-family: var(--mono); font-size: 11.5px; }
+.mm-no.nivel-0 .mm-rotulo { border-radius: 18px; border-width: 1.5px; background: linear-gradient(140deg, color-mix(in srgb, var(--loja) 26%, var(--vidro-forte)), var(--vidro-forte)); box-shadow: 0 14px 40px -14px rgb(0 0 0 / .7), 0 0 50px -16px var(--loja); }
+.mm-no.nivel-0 .mm-rotulo .txt b { font-size: 18px; font-weight: 800; letter-spacing: -.02em; }
+.mm-no.nivel-0 .mm-rotulo .txt small { font-size: 12px; }
+.mm-no.nivel-1 .mm-rotulo { border-radius: 14px; border-width: 1.5px; background: linear-gradient(140deg, color-mix(in srgb, var(--cor) 22%, var(--vidro-forte)), var(--vidro-forte)); }
+.mm-no.nivel-1 .mm-rotulo .txt b { font-size: 15px; font-weight: 700; }
+.mm-info {
+  flex: none; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--borda); background: var(--vidro-forte); color: var(--texto-2);
+  cursor: pointer; font: 600 11px/1 var(--mono); display: grid; place-items: center; opacity: .75; transition: opacity .2s, color .2s;
+}
+.mm-info:hover, .mm-info:focus-visible { opacity: 1; color: var(--texto); border-color: var(--cor); }
+.mm-barra {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 15; display: flex; gap: 6px;
+  background: var(--vidro); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--borda); border-radius: 999px; padding: 5px;
+}
+.mm-barra .botao { height: 34px; border-radius: 999px; border-color: transparent; background: none; }
+.mm-barra .botao:hover { background: rgb(127 127 127 / .12); }
+.modo-mapa .vivo { display: none; }
+.modo-mapa .numeros { bottom: 74px; }
+[data-visual="minimal"] .mm-rotulo { box-shadow: 0 1px 2px rgb(28 26 22 / .06), 0 8px 18px -12px rgb(60 45 20 / .28); }
+[data-visual="minimal"] .mm-no.nivel-0 .mm-rotulo { background: #fff; box-shadow: 0 16px 34px -18px rgb(60 45 20 / .45); border-color: var(--texto); }
+[data-visual="minimal"] .mm-no.nivel-1 .mm-rotulo { background: #fff; }
+[data-visual="minimal"] .mm-linhas path { stroke-opacity: .45; stroke-width: 1.6; }
+[data-visual="minimal"] .mm-linhas path.raso { stroke-width: 2.4; }
+[data-visual="minimal"] .mm-barra { backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 1px 2px rgb(28 26 22 / .06); }
+@media (max-width: 760px) {
+  .mm-barra .botao span { display: none; }
+  .mm-barra .botao { width: 40px; padding: 0; justify-content: center; }
+  .modo-mapa .numeros { display: none; }
+}
+
+/* ================================================================ visual minimalista
+   Mesma cena 3D, com cara de papel: claro, plano, linhas finas, sem brilho nem estrelas. */
+:root[data-visual="minimal"] {
+  --fundo: #f3f1ec; --fundo-2: #ebe8e1; --vidro: rgb(255 255 255 / .82); --vidro-forte: rgb(255 255 255 / .97);
+  --borda: rgb(28 26 22 / .09); --borda-forte: rgb(28 26 22 / .2);
+  --texto: #1c1b18; --texto-2: #67635a; --texto-3: #9a958a;
+  --experiencia: #7c5cc4; --extensoes: #2b2a26; --nucleo: #2b2a26; --dados: #3a6bc9;
+  --admin: #5856c9; --loja: #0d8a7b; --marketing: #cf4560; --integracao: #b7770c; --externo: #858177;
+  color-scheme: light;
+}
+[data-visual="minimal"] body { background: radial-gradient(1100px 700px at 50% 40%, #fbfaf7 0%, var(--fundo) 70%) fixed, var(--fundo); }
+[data-visual="minimal"] #estrelas { display: none; }
+[data-visual="minimal"] .logo-fundo { fill: #fff; stroke: rgb(28 26 22 / .12); }
+[data-visual="minimal"] .botao { backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 1px 2px rgb(28 26 22 / .06); }
+[data-visual="minimal"] .botao.primario { background: var(--texto); color: #fff; }
+[data-visual="minimal"] .placa {
+  background: rgb(255 255 255 / .9); border: 1px solid rgb(28 26 22 / .1);
+  box-shadow: 0 1px 0 rgb(28 26 22 / .04), 0 40px 70px -40px rgb(60 45 20 / .35);
+}
+[data-visual="minimal"] .camada:hover .placa, [data-visual="minimal"] .camada.focada .placa { border-color: color-mix(in srgb, var(--cor) 55%, transparent); }
+[data-visual="minimal"] .rotulo-camada h2 { font-weight: 650; letter-spacing: -.03em; }
+[data-visual="minimal"] .peca {
+  background: #fff; border: 1px solid rgb(28 26 22 / .1); color: var(--texto);
+  box-shadow: 0 1px 2px rgb(28 26 22 / .06), 0 10px 22px -14px rgb(60 45 20 / .3);
+}
+[data-visual="minimal"] .peca:hover, [data-visual="minimal"] .peca.ativa {
+  border-color: color-mix(in srgb, var(--cor) 60%, transparent); box-shadow: 0 26px 34px -20px rgb(60 45 20 / .4);
+}
+[data-visual="minimal"] .peca-grande .valor { color: var(--cor); font-weight: 700; }
+[data-visual="minimal"] .ficha-tabela { color: #4d4a43; background: #f7f6f2; border-color: rgb(28 26 22 / .1); }
+[data-visual="minimal"] .gatilho-marca { background: #d99a06; box-shadow: none; animation: none; }
+[data-visual="minimal"] .feixe { width: 1px; background: rgb(28 26 22 / .16); }
+[data-visual="minimal"] .feixe i { left: -2px; width: 5px; height: 5px; border-radius: 50%; background: var(--cor); box-shadow: none; }
+[data-visual="minimal"] .fluxo .ligacao { stroke: rgb(28 26 22 / .22); stroke-dasharray: none; stroke-width: 1.2; }
+[data-visual="minimal"] .fluxo .externa { stroke: rgb(28 26 22 / .13); stroke-dasharray: 3 5; stroke-width: 1.2; }
+[data-visual="minimal"] .fluxo .acesa { stroke: var(--texto); stroke-opacity: .85; }
+[data-visual="minimal"] .ponto-fluxo { fill: #6f6b62; filter: none; }
+[data-visual="minimal"] .orbe { background: #fff; border-color: rgb(28 26 22 / .12); box-shadow: 0 8px 18px -12px rgb(60 45 20 / .35); }
+[data-visual="minimal"] .orbe .bola { box-shadow: none; }
+[data-visual="minimal"] .numero, [data-visual="minimal"] .vivo, [data-visual="minimal"] .explodir, [data-visual="minimal"] .barra-tour {
+  backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 1px 2px rgb(28 26 22 / .05);
+}
+[data-visual="minimal"] .vivo .barra { fill: rgb(28 26 22 / .18); }
+[data-visual="minimal"] .pulso { animation: none; }
+[data-visual="minimal"] .gaveta { box-shadow: 0 30px 70px -30px rgb(60 45 20 / .35); backdrop-filter: none; -webkit-backdrop-filter: none; }
+[data-visual="minimal"] .metrica, [data-visual="minimal"] .lista li, [data-visual="minimal"] .chip { background: #fbfaf7; }
+[data-visual="minimal"] .codigo { background: #faf9f5; }
+[data-visual="minimal"] .codigo-topo i { background: #e2ded5; }
+[data-visual="minimal"] .codigo pre { color: #2b2a26; }
+[data-visual="minimal"] .k { color: #7445b8; } [data-visual="minimal"] .s2 { color: #2c7a4b; } [data-visual="minimal"] .n { color: #b0501a; }
+[data-visual="minimal"] .c { color: #a39e93; } [data-visual="minimal"] .f { color: #2457b5; }
+[data-visual="minimal"] .legenda h2, [data-visual="minimal"] .legenda p { text-shadow: none; }
+[data-visual="minimal"] .legenda h2 { font-weight: 700; }
+[data-visual="minimal"] .pontos-tour i { background: rgb(28 26 22 / .15); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .feixe i { display: none; }
+}
+</style>
+</head>
+<body>
+<canvas id="estrelas" aria-hidden="true"></canvas>
+
+<header class="topo">
+  <div class="marca">
+    <svg viewBox="0 0 36 36" aria-hidden="true"><rect class="logo-fundo" width="36" height="36" rx="10" fill="#11141d" stroke="rgba(255,255,255,.12)"/><path d="M8 22l10 5 10-5M8 17.5l10 5 10-5M18 7.5L8 12.5l10 5 10-5z" fill="none" stroke="#2dd4bf" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    <div><h1 id="titulo"></h1><p id="subtitulo"></p></div>
+  </div>
+  <div class="acoes">
+    <button class="botao botao-visual" id="btn-modo" title="Trocar entre camadas 3D e mapa mental (tecla M)"></button>
+    <button class="botao botao-visual" id="btn-visual" title="Trocar o visual (tecla V)" aria-label="Trocar o visual"></button>
+    <button class="botao" id="btn-geral" title="Voltar à visão geral (tecla 0)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5zM3 13l9 5 9-5"/></svg><span>Visão geral</span></button>
+    <button class="botao primario" id="btn-apresentar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span>Apresentar</span></button>
+  </div>
+</header>
+<nav class="trilha" id="trilha" aria-label="Onde você está"></nav>
+
+<main class="cena" id="cena" aria-label="Arquitetura em camadas. Arraste para girar, role para aproximar, clique numa camada ou módulo.">
+  <div class="mundo" id="mundo"></div>
+</main>
+
+<div class="controle">
+  <button class="botao" id="zoom-mais" aria-label="Aproximar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button class="botao" id="zoom-menos" aria-label="Afastar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+  <button class="botao" id="girar" aria-label="Girar sozinho" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button>
+</div>
+<label class="explodir">Juntar <input type="range" id="explodir" min="40" max="260" value="150" aria-label="Distância entre as camadas"> Explodir</label>
+
+<section class="mapa-mental" id="mapa-mental" aria-label="Mapa mental da arquitetura. Clique num ramo para abrir ou recolher; arraste para mover; role para aproximar." hidden>
+  <div class="mm-mundo" id="mm-mundo"><svg class="mm-linhas" id="mm-linhas" aria-hidden="true"></svg><div id="mm-nos" role="tree"></div></div>
+</section>
+<div class="mm-barra" id="mm-barra" hidden>
+  <button class="botao" id="mm-expandir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span>Expandir tudo</span></button>
+  <button class="botao" id="mm-recolher"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg><span>Recolher</span></button>
+  <button class="botao" id="mm-centro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><span>Centralizar</span></button>
+</div>
+<div class="numeros" id="numeros"></div>
+<aside class="vivo" id="vivo"></aside>
+
+<div class="legenda" id="legenda" aria-live="polite"><div class="passo" id="leg-passo"></div><h2 id="leg-titulo"></h2><p id="leg-texto"></p></div>
+<div class="barra-tour">
+  <button class="botao" id="tour-ant" aria-label="Anterior">←</button>
+  <div class="pontos-tour" id="pontos-tour"></div>
+  <button class="botao" id="tour-prox" aria-label="Próximo">→</button>
+  <button class="botao" id="tour-auto" aria-pressed="false">Automático</button>
+  <button class="botao" id="tour-sair">Sair</button>
+</div>
+
+<aside class="gaveta" id="gaveta" aria-label="Detalhes" aria-live="polite"></aside>
+
+<script>
+const D = {"projeto":"VestSeller","subtitulo":"E-commerce de livros com núcleo próprio","autoria":"Vi Marketing Digital","pilha":["Node.js","TypeScript","React","GraphQL","PostgreSQL","Express"],"modulos":[{"id":"data-center","nome":"Data Center","tipo":"extensao","grupo":"admin","ordem":1,"descricao":"Grupo Data Center no admin (Pedidos, Clientes, Pixels) e pixels da Meta, Google Ads e Google Analytics com consentimento de cookies.","linhas":7321,"arquivos":143,"testes":10,"telas":[{"nome":"Acessos painel","onde":"painel"},{"nome":"adminGoogle","onde":"painel"},{"nome":"adminGoogleCodigo","onde":"painel"},{"nome":"adminGoogleRetorno","onde":"painel"},{"nome":"Conectores","onde":"painel"},{"nome":"Minha conta","onde":"painel"},{"nome":"Pixels","onde":"painel"},{"nome":"googleEntrar","onde":"loja"},{"nome":"googleRetorno","onde":"loja"}],"telasAmpliadas":17,"apis":19,"apisPublicas":2,"tabelas":["vs_admin_acesso","vs_admin_codigo","vs_conector"],"visoes":[],"colunas":[],"gatilhos":[],"rotinas":[],"graphql":11,"componentes":50,"processadores":["customerCollectionFilters","orderCollectionFilters","productCollectionFilters","rollupDisplay"],"areas":3,"externos":["vindi","bling","correios","ses","smtp","google"],"trecho":{"arquivo":"migration","lingua":"sql","codigo":"CREATE TABLE IF NOT EXISTS vs_conector (\n  codigo VARCHAR(20) PRIMARY KEY,\n  valores JSONB NOT NULL DEFAULT '{}'::jsonb,\n  atualizado_em TIMESTAMPTZ NOT NULL DEFAULT now()\n)"},"historia":{"commits":19,"desde":"2026-10-29","ultima":"2026-11-06"}},{"id":"br-localizacao","nome":"Localização BR","tipo":"extensao","grupo":"loja","ordem":2,"descricao":"Localização brasileira para a loja: CPF/CNPJ, número no endereço e validações.","linhas":1883,"arquivos":37,"testes":7,"telas":[{"nome":"Contato","onde":"loja"}],"telasAmpliadas":5,"apis":1,"apisPublicas":1,"tabelas":[],"visoes":[],"colunas":[],"gatilhos":[],"rotinas":[],"graphql":1,"componentes":13,"processadores":["cartItemFields","productCollectionFilters","productCollectionSortBy"],"areas":2,"externos":[],"trecho":{"arquivo":"bootstrap.ts","lingua":"ts","codigo":"addProcessor('cartItemFields', (campos: any[]) =>\n  campos.map((campo) =>\n    campo.key !== 'qty'\n      ? campo\n      : {\n          ...campo,\n          resolvers: [\n            ...campo.resolvers,\n            async function conferirEstoque(this: any, qtd: number) {\n              const produto = await this.getProduct();\n              if (!produto) return qtd;\n              const problema = problemaDeEstoque(\n  // …"},"historia":{"commits":16,"desde":"2026-10-28","ultima":"2026-11-06"}},{"id":"frete-correios","nome":"Frete Correios","tipo":"extensao","grupo":"integracao","ordem":3,"descricao":"Frete Correios para a loja: cotação PAC/SEDEX pelo contrato do lojista.","linhas":1167,"arquivos":12,"testes":2,"telas":[],"telasAmpliadas":1,"apis":1,"apisPublicas":1,"tabelas":[],"visoes":[],"colunas":[],"gatilhos":[],"rotinas":[],"graphql":0,"componentes":1,"processadores":[],"areas":0,"externos":["correios"],"trecho":{"arquivo":"SimuladorFrete.tsx","lingua":"ts","codigo":"export const layout = {\n  areaId: 'productPageMiddleRight',\n  sortOrder: 40\n};"},"historia":{"commits":7,"desde":"2026-10-28","ultima":"2026-11-04"}},{"id":"pagamento-vindi","nome":"Pagamento Vindi","tipo":"extensao","grupo":"integracao","ordem":4,"descricao":"Pagamento Vindi para a loja: Pix, boleto e cartão parcelado.","linhas":1826,"arquivos":26,"testes":2,"telas":[],"telasAmpliadas":4,"apis":3,"apisPublicas":3,"tabelas":["vindi_cobranca"],"visoes":[],"colunas":["coupon.vs_formas_pagamento"],"gatilhos":[],"rotinas":[],"graphql":5,"componentes":4,"processadores":["discountCalculatorFunctions"],"areas":0,"externos":["vindi"],"trecho":{"arquivo":"migration","lingua":"sql","codigo":"CREATE TABLE IF NOT EXISTS vindi_cobranca (\n  vindi_cobranca_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,\n  order_id INTEGER NOT NULL UNIQUE REFERENCES \"order\"(order_id) ON DELETE CASCADE,\n  metodo VARCHAR(32) NOT NULL,\n  fatura_id BIGINT NOT NULL,\n  cobranca_id BIGINT,\n  status VARCHAR(16) NOT NULL,\n  valor NUMERIC(12, 2) NOT NULL,\n  parcelas SMALLINT,\n  pix_copia_cola TEXT,\n  pix_qrcode_url TEXT,\n  boleto_url TEXT,\n  // …"},"historia":{"commits":7,"desde":"2026-10-28","ultima":"2026-11-06"}},{"id":"erp-bling","nome":"ERP Bling","tipo":"extensao","grupo":"integracao","ordem":5,"descricao":"Integração Bling (API v3) para a loja: pedidos pagos viram pedidos de venda; NF-e e rastreio voltam.","linhas":1317,"arquivos":20,"testes":2,"telas":[],"telasAmpliadas":0,"apis":4,"apisPublicas":1,"tabelas":["bling_conexao","bling_pedido"],"visoes":[],"colunas":[],"gatilhos":[],"rotinas":[{"nome":"blingEnviarPendentes","agenda":"*/5 * * * *","quando":"a cada 5 min"},{"nome":"blingBuscarRetorno","agenda":"*/30 * * * *","quando":"a cada 30 min"},{"nome":"blingEstoque","agenda":"*/15 * * * *","quando":"a cada 15 min"}],"graphql":0,"componentes":0,"processadores":[],"areas":0,"externos":["bling"],"trecho":{"arquivo":"bootstrap.ts","lingua":"ts","codigo":"registerJob({\n  name: 'blingEnviarPendentes',\n  schedule: '*/5 * * * *',\n  resolve: path.resolve(import.meta.dirname, 'crons', 'enviarPendentes.js'),\n  enabled: true\n});"},"historia":{"commits":5,"desde":"2026-10-28","ultima":"2026-11-04"}},{"id":"migracao-magento","nome":"Migração Magento","tipo":"extensao","grupo":"integracao","ordem":6,"descricao":"Migração do Magento da VestSeller: catálogo pela API GraphQL pública e redirecionamentos 301.","linhas":97,"arquivos":4,"testes":0,"telas":[],"telasAmpliadas":0,"apis":0,"apisPublicas":0,"tabelas":["magento_mapa","magento_redirect"],"visoes":[],"colunas":[],"gatilhos":[],"rotinas":[],"graphql":0,"componentes":0,"processadores":[],"areas":0,"externos":["magento"],"trecho":{"arquivo":"migration","lingua":"sql","codigo":"CREATE TABLE IF NOT EXISTS magento_mapa (\n  tipo VARCHAR(16) NOT NULL,\n  magento_id VARCHAR(64) NOT NULL,\n  loja_id INTEGER NOT NULL,\n  loja_uuid UUID,\n  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),\n  PRIMARY KEY (tipo, magento_id)\n)"},"historia":{"commits":9,"desde":"2026-10-29","ultima":"2026-11-04"}},{"id":"banners","nome":"Banners","tipo":"extensao","grupo":"marketing","ordem":7,"descricao":"Banners da página inicial gerenciados pelo admin (imagem, link, ordem, cor do topo).","linhas":676,"arquivos":18,"testes":1,"telas":[{"nome":"Banners","onde":"painel"}],"telasAmpliadas":0,"apis":4,"apisPublicas":0,"tabelas":["vs_banner"],"visoes":[],"colunas":[],"gatilhos":[],"rotinas":[],"graphql":3,"componentes":3,"processadores":[],"areas":0,"externos":[],"trecho":{"arquivo":"migration","lingua":"sql","codigo":"CREATE TABLE IF NOT EXISTS vs_banner (\n  banner_id SERIAL PRIMARY KEY,\n  imagem TEXT NOT NULL,\n  imagem_celular TEXT,\n  alt TEXT NOT NULL DEFAULT '',\n  link TEXT NOT NULL DEFAULT '',\n  cor_topo VARCHAR(9),\n  largo BOOLEAN NOT NULL DEFAULT true,\n  ordem INTEGER NOT NULL DEFAULT 0,\n  ativo BOOLEAN NOT NULL DEFAULT true,\n  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),\n  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()\n  // …"},"historia":{"commits":3,"desde":"2026-10-29","ultima":"2026-11-04"}},{"id":"email-marketing","nome":"E-mail MKT","tipo":"extensao","grupo":"marketing","ordem":8,"descricao":"Categoria E-MAIL MKT do admin: contatos, listas, templates e campanhas enviadas pelo Amazon SES, com descadastro e rastreamento.","linhas":4799,"arquivos":61,"testes":2,"telas":[{"nome":"E-mail MKT","onde":"painel"},{"nome":"Campanha","onde":"painel"},{"nome":"Campanhas","onde":"painel"},{"nome":"Configurações do envio","onde":"painel"},{"nome":"Contatos","onde":"painel"},{"nome":"Listas","onde":"painel"},{"nome":"Template","onde":"painel"},{"nome":"Templates","onde":"painel"}],"telasAmpliadas":0,"apis":17,"apisPublicas":4,"tabelas":["em_campanha","em_config","em_contato","em_envio","em_evento","em_lista","em_lista_contato","em_template"],"visoes":[],"colunas":[],"gatilhos":[],"rotinas":[{"nome":"emailMktFila","agenda":"* * * * *","quando":"a cada minuto"}],"graphql":0,"componentes":9,"processadores":[],"areas":0,"externos":["ses","smtp"],"trecho":{"arquivo":"bootstrap.ts","lingua":"ts","codigo":"registerJob({\n  name: 'emailMktFila',\n  schedule: '* * * * *',\n  resolve: path.resolve(import.meta.dirname, 'crons', 'processarFila.js'),\n  enabled: true\n});"},"historia":{"commits":4,"desde":"2026-11-04","ultima":"2026-11-04"}},{"id":"combos","nome":"Combos","tipo":"extensao","grupo":"loja","ordem":9,"descricao":"Combos promocionais: conjuntos de livros já cadastrados, com estoque, peso, preço e cupons ligados aos livros.","linhas":2028,"arquivos":29,"testes":1,"telas":[{"nome":"Combos","onde":"painel"}],"telasAmpliadas":5,"apis":5,"apisPublicas":0,"tabelas":["vs_combo","vs_combo_item","vs_combo_pedido_item"],"visoes":[],"colunas":["coupon.vs_vale_combos"],"gatilhos":[{"momento":"depois","quando":"alteração de status","tabela":"order"},{"momento":"depois","quando":"inclusão","tabela":"order_item"},{"momento":"depois","quando":"alteração","tabela":"product"},{"momento":"antes","quando":"alteração","tabela":"product"},{"momento":"antes","quando":"inclusão ou alteração","tabela":"product_inventory"},{"momento":"depois","quando":"inclusão ou alteração","tabela":"product_inventory"}],"rotinas":[],"graphql":5,"componentes":8,"processadores":["cartItemFields","couponValidatorFunctions","discountCalculatorFunctions","productCollectionFilters"],"areas":0,"externos":[],"trecho":{"arquivo":"migration","lingua":"sql","codigo":"CREATE TRIGGER vs_combo_inventario_antes BEFORE INSERT OR UPDATE ON product_inventory\nFOR EACH ROW EXECUTE FUNCTION vs_combo_inventario()"},"historia":{"commits":3,"desde":"2026-11-04","ultima":"2026-11-04"}},{"id":"reputacao","nome":"Reputação","tipo":"extensao","grupo":"marketing","ordem":10,"descricao":"Reputação dos livros: vendidos, ordenação por relevância, avaliações e perguntas dos clientes.","linhas":2848,"arquivos":41,"testes":1,"telas":[{"nome":"Avaliações","onde":"painel"},{"nome":"Perguntas","onde":"painel"}],"telasAmpliadas":4,"apis":8,"apisPublicas":4,"tabelas":["vs_avaliacao","vs_avaliacao_convite","vs_pergunta","vs_vendas_extra"],"visoes":["vs_produto_metricas","vs_vendidos_pedidos"],"colunas":[],"gatilhos":[],"rotinas":[{"nome":"reputacaoConvites","agenda":"17 * * * *","quando":"de hora em hora"}],"graphql":2,"componentes":11,"processadores":["productCollectionFilters","productCollectionSortBy"],"areas":0,"externos":["whatsapp"],"trecho":{"arquivo":"bootstrap.ts","lingua":"ts","codigo":"registerJob({\n  name: 'reputacaoConvites',\n  schedule: '17 * * * *',\n  resolve: path.resolve(import.meta.dirname, 'crons', 'convidarAvaliacao.js'),\n  enabled: true\n});"},"historia":{"commits":4,"desde":"2026-11-04","ultima":"2026-11-04"}},{"id":"previa-livro","nome":"Prévia do livro","tipo":"extensao","grupo":"loja","ordem":11,"descricao":"Prévia do livro em PDF: envio no cadastro do produto e leitor em forma de livro aberto na página do livro.","linhas":726,"arquivos":12,"testes":2,"telas":[],"telasAmpliadas":2,"apis":1,"apisPublicas":0,"tabelas":["vs_previa"],"visoes":[],"colunas":[],"gatilhos":[],"rotinas":[],"graphql":2,"componentes":2,"processadores":[],"areas":0,"externos":[],"trecho":{"arquivo":"migration","lingua":"sql","codigo":"CREATE TABLE IF NOT EXISTS vs_previa (\n  product_id INTEGER PRIMARY KEY REFERENCES product(product_id) ON DELETE CASCADE,\n  arquivo TEXT NOT NULL,\n  nome_original TEXT,\n  tamanho INTEGER NOT NULL DEFAULT 0,\n  atualizado_em TIMESTAMPTZ NOT NULL DEFAULT now()\n)"},"historia":{"commits":1,"desde":"2026-11-06","ultima":"2026-11-06"}},{"id":"ajuda","nome":"Ajuda","tipo":"extensao","grupo":"admin","ordem":12,"descricao":"Ajuda dentro do painel: botão \"?\" com o texto da tela aberta, assuntos e o mapa da loja.","linhas":462,"arquivos":8,"testes":1,"telas":[],"telasAmpliadas":0,"apis":1,"apisPublicas":0,"tabelas":[],"visoes":[],"colunas":[],"gatilhos":[],"rotinas":[],"graphql":3,"componentes":1,"processadores":[],"areas":0,"externos":["vindi"],"trecho":{"arquivo":"schema.graphql","lingua":"graphql","codigo":"type AjudaTopico {\n  id: String!\n  titulo: String!\n  resumo: String!\n  html: String!\n  telas: [String!]!\n}"},"historia":{"commits":2,"desde":"2026-11-20","ultima":"2026-11-20"}},{"id":"notificacoes","nome":"Notificações","tipo":"extensao","grupo":"admin","ordem":13,"descricao":"Notificações do painel admin: sino no cabeçalho e contadores no menu, por usuário.","linhas":597,"arquivos":7,"testes":0,"telas":[],"telasAmpliadas":0,"apis":2,"apisPublicas":0,"tabelas":["vs_notificacao","vs_notificacao_vista"],"visoes":[],"colunas":[],"gatilhos":[{"momento":"depois","quando":"alteração de situacao","tabela":"bling_pedido"},{"momento":"depois","quando":"inclusão ou alteração ou exclusão","tabela":"contact_submission"},{"momento":"depois","quando":"alteração de situacao","tabela":"em_campanha"},{"momento":"depois","quando":"alteração de qty","tabela":"product_inventory"},{"momento":"depois","quando":"inclusão ou alteração ou exclusão","tabela":"vs_avaliacao"},{"momento":"depois","quando":"inclusão ou alteração ou exclusão","tabela":"vs_pergunta"}],"rotinas":[],"graphql":0,"componentes":1,"processadores":[],"areas":0,"externos":[],"trecho":{"arquivo":"migration","lingua":"ts","codigo":"await gatilho(\n  'vs_pergunta',\n  'vs_notif_pergunta',\n  'AFTER INSERT OR UPDATE OR DELETE',\n  `IF TG_OP = 'INSERT' THEN\n     IF NEW.resposta IS NULL OR NEW.resposta = '' THEN\n       PERFORM vs_notificar('pergunta', 'perguntaGrid', 'perguntas', 'Nova pergunta para responder',\n         NEW.nome || ' perguntou sobre \"' || vs_nome_produto(NEW.product_id) || '\": ' || left(NEW.pergunta, 140),\n         'pergunta:' || NEW.pergunta_id);\n  // …"},"historia":{"commits":1,"desde":"2026-11-04","ultima":"2026-11-04"}},{"id":"vestseller","nome":"Tema VestSeller","tipo":"tema","grupo":"loja","ordem":14,"descricao":"Tema da Editora VestSeller para a loja.","linhas":2186,"arquivos":29,"testes":0,"telas":[],"telasAmpliadas":0,"apis":0,"apisPublicas":0,"tabelas":[],"visoes":[],"colunas":[],"gatilhos":[],"rotinas":[],"graphql":0,"componentes":21,"processadores":[],"areas":0,"externos":["whatsapp"],"trecho":{"arquivo":"AvisoCookies.tsx","lingua":"ts","codigo":"export const layout = {\n  areaId: 'footerBottom',\n  sortOrder: 30\n};"},"historia":{"commits":28,"desde":"2026-10-28","ultima":"2026-11-06"}}],"ligacoes":[{"de":"ajuda","para":"data-center","por":["área vsContaAdminAntes"]},{"de":"combos","para":"br-localizacao","por":["área couponEditGeneral"]},{"de":"combos","para":"data-center","por":["área productEditDeleteConfirm","área productGridDeleteConfirm"]},{"de":"data-center","para":"erp-bling","por":["API","bling_conexao","bling_pedido"]},{"de":"data-center","para":"pagamento-vindi","por":["vindi_cobranca"]},{"de":"erp-bling","para":"pagamento-vindi","por":["vindi_cobranca"]},{"de":"frete-correios","para":"combos","por":["vs_combo_item"]},{"de":"notificacoes","para":"combos","por":["vs_combo"]},{"de":"notificacoes","para":"data-center","por":["vs_admin_acesso","área vsContaAdminAntes"]},{"de":"notificacoes","para":"email-marketing","por":["em_campanha","em_envio"]},{"de":"notificacoes","para":"erp-bling","por":["bling_pedido"]},{"de":"notificacoes","para":"reputacao","por":["vs_avaliacao","vs_pergunta"]},{"de":"pagamento-vindi","para":"br-localizacao","por":["área couponEditGeneral"]},{"de":"reputacao","para":"combos","por":["vs_combo_pedido_item"]},{"de":"vestseller","para":"br-localizacao","por":["API"]}],"tabelasNucleo":[{"tabela":"contact_submission","por":["notificacoes"]},{"tabela":"coupon","por":["pagamento-vindi","combos"]},{"tabela":"order","por":["combos"]},{"tabela":"order_item","por":["combos"]},{"tabela":"product","por":["combos"]},{"tabela":"product_inventory","por":["combos","notificacoes"]}],"externos":[{"id":"vindi","nome":"Vindi","papel":"Pix, boleto e cartão","usadoPor":["data-center","pagamento-vindi","ajuda"]},{"id":"bling","nome":"Bling","papel":"ERP, NF-e e estoque","usadoPor":["data-center","erp-bling"]},{"id":"correios","nome":"Correios","papel":"PAC e SEDEX","usadoPor":["data-center","frete-correios"]},{"id":"ses","nome":"Amazon SES","papel":"E-mail em massa","usadoPor":["data-center","email-marketing"]},{"id":"smtp","nome":"SMTP","papel":"E-mails da loja","usadoPor":["data-center","email-marketing"]},{"id":"google","nome":"Google","papel":"Login com Google","usadoPor":["data-center"]},{"id":"magento","nome":"Magento","papel":"Loja antiga (importação)","usadoPor":["migracao-magento"]},{"id":"whatsapp","nome":"WhatsApp","papel":"Contato com o cliente","usadoPor":["reputacao","vestseller"]}],"totais":{"extensoes":13,"telasAdmin":19,"apis":66,"tabelas":27,"gatilhos":12,"rotinas":5,"testes":31,"telasComAjuda":59,"totalTelasAdmin":59,"linhas":27933},"nucleo":{"commits":11,"desde":"2026-11-04","ultima":"2026-11-06"},"historia":{"commits":87,"inicio":"2026-10-28","ultima":"2026-11-20","versao":"b5254cf","porSemana":[50,26,6,5]}};
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const fmt = (n) => Number(n).toLocaleString('pt-BR');
+const data = (iso) => iso ? new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', '') : '';
+const reduzir = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const COR = { admin: 'var(--admin)', loja: 'var(--loja)', marketing: 'var(--marketing)', integracao: 'var(--integracao)', externo: 'var(--externo)' };
+const NOME_GRUPO = { admin: 'Painel', loja: 'Loja', marketing: 'Marketing', integracao: 'Integração' };
+const W = 900, H = 560;
+const feixes = [], arestas = [], zonasExperiencia = [];
+let modo = '3d'; // '3d' (camadas) ou 'mapa' (mapa mental)
+
+$('#titulo').textContent = `${D.projeto} · Arquitetura viva`;
+$('#subtitulo').textContent = D.subtitulo + (D.autoria ? ' · ' + D.autoria : '');
+
+// ---------------------------------------------------------------- estrelas (fundo com profundidade)
+(() => {
+  const c = $('#estrelas'), g = c.getContext('2d');
+  let pts = [];
+  const montar = () => {
+    c.width = innerWidth * devicePixelRatio; c.height = innerHeight * devicePixelRatio;
+    pts = Array.from({ length: Math.round(innerWidth * innerHeight / 9000) }, () => ({ x: Math.random(), y: Math.random(), z: Math.random(), f: Math.random() * 6.28 }));
+  };
+  const desenhar = (t) => {
+    g.clearRect(0, 0, c.width, c.height);
+    for (const p of pts) {
+      const a = .25 + .55 * p.z * (reduzir ? 1 : (.6 + .4 * Math.sin(t / 1400 + p.f)));
+      g.fillStyle = `rgba(200,215,255,${a})`;
+      g.beginPath(); g.arc(p.x * c.width, p.y * c.height, (.4 + p.z * 1.1) * devicePixelRatio, 0, 6.29); g.fill();
+    }
+    if (!reduzir) requestAnimationFrame(desenhar);
+  };
+  montar(); addEventListener('resize', montar); requestAnimationFrame(desenhar);
+})();
+
+// ---------------------------------------------------------------- posições
+const grupos = ['admin', 'loja', 'marketing', 'integracao'];
+const modulos = [...D.modulos].sort((a, b) => grupos.indexOf(a.grupo) - grupos.indexOf(b.grupo) || a.ordem - b.ordem);
+const porId = Object.fromEntries(modulos.map((m) => [m.id, m]));
+(() => {
+  const colunas = 5, TW = 150, TH = 76;
+  const linhas = Math.ceil(modulos.length / colunas);
+  modulos.forEach((m, i) => {
+    const r = Math.floor(i / colunas), naLinha = Math.min(colunas, modulos.length - r * colunas), c = i % colunas;
+    m.cx = W / 2 + (c - (naLinha - 1) / 2) * 168;
+    m.cy = linhas === 1 ? H / 2 : 115 + r * ((H - 230) / (linhas - 1));
+    m.w = TW; m.h = TH;
+  });
+})();
+const externos = D.externos.map((x) => ({ ...x }));
+(() => {
+  for (const x of externos) {
+    const us = x.usadoPor.map((u) => porId[u]).filter(Boolean);
+    const mx = us.reduce((s, u) => s + u.cx, 0) / (us.length || 1), my = us.reduce((s, u) => s + u.cy, 0) / (us.length || 1);
+    x.ang = Math.atan2(my - H / 2, mx - W / 2);
+  }
+  externos.sort((a, b) => a.ang - b.ang);
+  const min = (Math.PI * 2) / Math.max(externos.length * 1.35, 10);
+  for (let v = 0; v < 60; v++) for (let i = 0; i < externos.length; i++) {
+    const a = externos[i], b = externos[(i + 1) % externos.length];
+    let d = b.ang - a.ang; if (i === externos.length - 1) d += Math.PI * 2;
+    if (d < min) { a.ang -= (min - d) / 2; b.ang += (min - d) / 2; }
+  }
+  for (const x of externos) { x.cx = W / 2 + Math.cos(x.ang) * (W / 2 + 120); x.cy = H / 2 + Math.sin(x.ang) * (H / 2 + 100); }
+})();
+
+// ---------------------------------------------------------------- camadas
+const T = D.totais;
+const nucleoInfo = [
+  { id: 'rotas', nome: 'Rotas e middlewares', valor: T.apis + T.telasAdmin, rotulo: 'rotas das extensões', texto: 'Cada pasta de página ou API vira uma rota. Middlewares em cadeia cuidam de login, permissões e validação antes do código da tela.' },
+  { id: 'areas', nome: 'Áreas e componentes', valor: D.modulos.reduce((s, m) => s + m.componentes, 0), rotulo: 'componentes encaixados', texto: 'As telas do núcleo têm "áreas" nomeadas. Uma extensão encaixa um componente React numa área sem tocar no código do núcleo.' },
+  { id: 'graphql', nome: 'GraphQL', valor: D.modulos.reduce((s, m) => s + m.graphql, 0), rotulo: 'tipos e campos novos', texto: 'Cada componente declara a consulta de que precisa. O núcleo junta tudo numa consulta só por página, no servidor.' },
+  { id: 'cron', nome: 'Rotinas agendadas', valor: T.rotinas, rotulo: 'rotinas', texto: 'Trabalhos em segundo plano, como fila de e-mails, sincronização com o ERP e convites, rodam em processos separados, por agenda cron.' },
+  { id: 'migracoes', nome: 'Migrações', valor: T.tabelas, rotulo: 'tabelas criadas', texto: 'Cada extensão versiona o próprio banco. Ao subir, o núcleo aplica as migrações que faltam, na ordem.' },
+  { id: 'processadores', nome: 'Processadores', valor: new Set(D.modulos.flatMap((m) => m.processadores || [])).size || '∞', rotulo: 'pontos de extensão', texto: 'Funções que transformam listas do núcleo (filtros, ordenações, campos do carrinho) e permitem mudar regras sem copiar código.' }
+];
+const camadas = [
+  { i: 0, id: 'dados', nome: 'Dados', cor: 'var(--dados)', texto: `PostgreSQL com ${T.tabelas} tabelas próprias e ${T.gatilhos} gatilhos: regras que valem para qualquer gravação.` },
+  { i: 1, id: 'nucleo', nome: 'Núcleo', cor: 'var(--nucleo)', texto: 'Motor próprio: rotas, áreas, GraphQL, rotinas e migrações.' },
+  { i: 2, id: 'extensoes', nome: 'Módulos', cor: 'var(--extensoes)', texto: `${modulos.length} módulos independentes, plugados no núcleo.` },
+  { i: 3, id: 'experiencia', nome: 'Experiência', cor: 'var(--experiencia)', texto: 'O que as pessoas usam: loja, painel, e-mails e APIs.' }
+];
+const mundo = $('#mundo');
+const elCamadas = {};
+const cria = (tag, cls, pai, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (pai) pai.appendChild(e); return e; };
+
+for (const c of camadas) {
+  const el = cria('section', 'camada', mundo);
+  el.style.setProperty('--i', c.i); el.style.setProperty('--cor', c.cor);
+  el.dataset.camada = c.id;
+  const placa = cria('div', 'placa', el);
+  placa.setAttribute('role', 'button'); placa.setAttribute('aria-label', 'Camada ' + c.nome);
+  placa.addEventListener('click', (ev) => { if (!moveu) focarCamada(c.id); ev.stopPropagation(); });
+  cria('div', 'rotulo-camada', el, `<div class="n">0${4 - c.i} · CAMADA</div><h2>${esc(c.nome)}</h2><p>${esc(c.texto)}</p>`);
+  elCamadas[c.id] = el;
+}
+
+// Camada de módulos: peças, ligações, serviços externos.
+const pecas = {};
+(() => {
+  const el = elCamadas.extensoes;
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'fluxo'); svg.setAttribute('width', W + 440); svg.setAttribute('height', H + 400);
+  svg.setAttribute('viewBox', `-220 -200 ${W + 440} ${H + 400}`);
+  el.appendChild(svg);
+  const caminho = (x1, y1, x2, y2, cls, puxa) => {
+    const mx = (x1 + x2) / 2 + (W / 2 - (x1 + x2) / 2) * puxa, my = (y1 + y2) / 2 + (H / 2 - (y1 + y2) / 2) * puxa;
+    const p = document.createElementNS(svg.namespaceURI, 'path');
+    p.setAttribute('d', `M${x1},${y1} Q${mx},${my} ${x2},${y2}`); p.setAttribute('class', cls); svg.appendChild(p);
+    return p;
+  };
+  const pulso = (p, cor, dur, atraso) => {
+    if (reduzir) return;
+    const id = 'c' + Math.random().toString(36).slice(2);
+    p.id = id;
+    const bola = document.createElementNS(svg.namespaceURI, 'circle');
+    bola.setAttribute('r', 3.2); bola.setAttribute('fill', cor); bola.setAttribute('class', 'ponto-fluxo'); bola.style.setProperty('--brilho', `drop-shadow(0 0 5px ${cor})`);
+    const anim = document.createElementNS(svg.namespaceURI, 'animateMotion');
+    anim.setAttribute('dur', dur + 's'); anim.setAttribute('repeatCount', 'indefinite'); anim.setAttribute('begin', atraso + 's');
+    const mp = document.createElementNS(svg.namespaceURI, 'mpath'); mp.setAttributeNS('http://www.w3.org/1999/xlink', 'href', '#' + id); mp.setAttribute('href', '#' + id);
+    anim.appendChild(mp); bola.appendChild(anim); svg.appendChild(bola);
+  };
+
+  D.ligacoes.forEach((l, k) => {
+    const a = porId[l.de], b = porId[l.para]; if (!a || !b) return;
+    const p = caminho(a.cx, a.cy, b.cx, b.cy, 'ligacao', .35);
+    pulso(p, '#e4e7ef', 3 + (k % 4) * .7, -(k * .37) % 3);
+    arestas.push({ p, de: l.de, para: l.para });
+  });
+  externos.forEach((x, k) => {
+    for (const u of x.usadoPor) {
+      const a = porId[u]; if (!a) continue;
+      const p = caminho(a.cx, a.cy, x.cx, x.cy, 'externa', .05);
+      pulso(p, '#a1a1aa', 3.6 + (k % 3), -(k * .53) % 3);
+      arestas.push({ p, de: u, para: 'x:' + x.id });
+    }
+  });
+  for (const m of modulos) {
+    const b = cria('button', 'peca', el, `<span class="marca-cor"></span><b>${esc(m.nome)}</b><small>${esc(resumoModulo(m))}</small>`);
+    b.style.setProperty('--cor', COR[m.grupo] || 'var(--loja)');
+    Object.assign(b.style, { left: m.cx - m.w / 2 + 'px', top: m.cy - m.h / 2 + 'px', width: m.w + 'px', height: m.h + 'px' });
+    b.setAttribute('aria-label', `${m.nome}: ${resumoModulo(m)}`);
+    b.addEventListener('click', (ev) => { ev.stopPropagation(); if (!moveu) abrirModulo(m.id); });
+    b.addEventListener('pointerenter', () => acender(m.id));
+    b.addEventListener('pointerleave', () => acender(null));
+    pecas[m.id] = b;
+    // feixes: para baixo (dados) se mexe no banco, para cima (experiência) se tem telas
+    const temDados = m.tabelas.length + m.gatilhos.length + m.colunas.length > 0;
+    if (temDados) feixe(el, m.cx, m.cy, 'desce', COR[m.grupo], 2);
+    if (m.telas.length || m.telasAmpliadas || m.apis) feixe(el, m.cx, m.cy, 'sobe', COR[m.grupo], 1);
+  }
+  for (const x of externos) {
+    const b = cria('button', 'orbe', el, `<span class="bola"></span><span><b>${esc(x.nome)}</b><small>${esc(x.papel)}</small></span>`);
+    Object.assign(b.style, { left: x.cx + 'px', top: x.cy + 'px' });
+    b.addEventListener('click', (ev) => { ev.stopPropagation(); if (!moveu) abrirExterno(x.id); });
+    b.addEventListener('pointerenter', () => acender('x:' + x.id));
+    b.addEventListener('pointerleave', () => acender(null));
+    pecas['x:' + x.id] = b;
+  }
+})();
+function resumoModulo(m) {
+  const p = [];
+  if (m.telas.length) p.push(`${m.telas.length} ${m.telas.length === 1 ? 'tela' : 'telas'}`);
+  if (m.apis) p.push(`${m.apis} APIs`);
+  if (m.tabelas.length) p.push(`${m.tabelas.length} ${m.tabelas.length === 1 ? 'tabela' : 'tabelas'}`);
+  if (!p.length) p.push(m.tipo === 'tema' ? 'tema visual' : `${m.componentes} componentes`);
+  return p.slice(0, 2).join(' · ');
+}
+function feixe(pai, x, y, sentido, cor, camadasDist) {
+  const f = cria('div', 'feixe ' + sentido, pai);
+  f.style.setProperty('--cor', cor);
+  const atualizar = () => {
+    const gap = Number($('#explodir').value);
+    const h = gap * camadasDist;
+    Object.assign(f.style, { left: x - 1 + 'px', top: y + 'px', height: h + 'px' });
+    f.style.setProperty('--h', h + 'px');
+  };
+  f._atualizar = atualizar; atualizar(); feixes.push(f);
+  for (let k = 0; k < 2; k++) {
+    const i = cria('i', '', f);
+    i.style.setProperty('--dur', (2.2 + Math.random() * 1.6).toFixed(2) + 's');
+    i.style.setProperty('--atraso', (-Math.random() * 3).toFixed(2) + 's');
+  }
+}
+
+
+// Camada de dados: tabelas de cada módulo empilhadas debaixo dele.
+(() => {
+  const el = elCamadas.dados;
+  for (const m of modulos) {
+    const itens = [...m.tabelas, ...m.visoes.map((v) => v + ' (visão)')];
+    const mostrar = itens.slice(0, 5);
+    if (itens.length > 5) mostrar.push(`+${itens.length - 5} tabelas`);
+    mostrar.forEach((t, k) => {
+      const f = cria('div', 'ficha-tabela', el, esc(t));
+      f.style.setProperty('--cor', COR[m.grupo]);
+      Object.assign(f.style, { left: m.cx - 72 + 'px', top: m.cy - 40 + k * 22 + 'px', width: '144px' });
+    });
+    m.gatilhos.forEach((g, k) => {
+      const p = cria('div', 'gatilho-marca', el);
+      Object.assign(p.style, { left: m.cx + 78 + 'px', top: m.cy - 38 + k * 12 + 'px', animationDelay: k * .3 + 's' });
+    });
+  }
+  const nuc = D.tabelasNucleo.map((t) => t.tabela);
+  nuc.forEach((t, k) => {
+    const f = cria('div', 'ficha-tabela', el, esc(t));
+    f.style.setProperty('--cor', 'var(--nucleo)');
+    Object.assign(f.style, { left: 230 + k * 96 + 'px', top: H - 44 + 'px', width: '88px' });
+  });
+  if (nuc.length) cria('div', 'ficha-tabela', el, 'núcleo ›').setAttribute('style', `--cor:var(--dados);left:150px;top:${H - 44}px;width:70px`);
+})();
+
+// Camada do núcleo: conceitos.
+(() => {
+  const el = elCamadas.nucleo;
+  nucleoInfo.forEach((n, k) => {
+    const c = k % 3, r = Math.floor(k / 3);
+    const b = cria('button', 'peca peca-grande', el, `<b>${esc(n.nome)}</b><span class="valor">${esc(n.valor)}</span><small>${esc(n.rotulo)}</small>`);
+    b.style.setProperty('--cor', 'var(--nucleo)');
+    Object.assign(b.style, { left: 70 + c * 262 + 'px', top: 150 + r * 190 + 'px', width: '236px', height: '160px' });
+    b.addEventListener('click', (ev) => { ev.stopPropagation(); if (!moveu) abrirNucleo(n.id); });
+  });
+})();
+
+// Camada de experiência: superfícies de uso.
+(() => {
+  const el = elCamadas.experiencia;
+  const telasLoja = D.modulos.reduce((s, m) => s + m.telas.filter((t) => t.onde === 'loja').length, 0);
+  const ampliadas = D.modulos.reduce((s, m) => s + m.telasAmpliadas, 0);
+  const temEmail = D.externos.some((x) => x.id === 'smtp' || x.id === 'ses');
+  const zonas = [
+    { nome: 'Loja', valor: telasLoja + ampliadas, rotulo: 'páginas novas ou ampliadas', texto: 'Vitrine, busca com sugestões, página do livro com prévia em PDF, avaliações, checkout brasileiro.' },
+    { nome: 'Painel', valor: T.totalTelasAdmin, rotulo: `telas · ${T.telasComAjuda} com ajuda embutida`, texto: 'Gestão de pedidos, catálogo, combos, cupons, e-mail marketing, acessos por permissão, notificações.' },
+    { nome: 'APIs', valor: T.apis, rotulo: `rotas REST + GraphQL`, texto: 'Rotas REST das extensões e um GraphQL único, com permissões por painel.' },
+    { nome: 'E-mails', valor: temEmail ? 2 : 0, rotulo: 'canais (transacional e campanhas)', texto: 'E-mails da loja por SMTP e campanhas em massa pela Amazon SES, só para inscritos.' }
+  ];
+  zonasExperiencia.push(...zonas);
+  zonas.forEach((z, k) => {
+    const b = cria('button', 'peca peca-grande', el, `<b>${esc(z.nome)}</b><span class="valor">${esc(z.valor)}</span><small>${esc(z.rotulo)}</small>`);
+    b.style.setProperty('--cor', 'var(--experiencia)');
+    Object.assign(b.style, { left: 60 + (k % 2) * 400 + 'px', top: 140 + Math.floor(k / 2) * 190 + 'px', width: '380px', height: '164px' });
+    b.addEventListener('click', (ev) => { ev.stopPropagation(); if (!moveu) abrirZona(z); });
+  });
+})();
+
+function acender(id) {
+  for (const a of arestas) a.p.classList.toggle('acesa', !!id && (a.de === id || a.para === id));
+  for (const [k, p] of Object.entries(pecas)) {
+    const ligado = !id || k === id || arestas.some((a) => (a.de === id && a.para === k) || (a.para === id && a.de === k));
+    p.classList.toggle('apagada', !ligado);
+  }
+}
+
+// ---------------------------------------------------------------- câmera
+const cam = { rx: 58, rz: -38, zoom: 1, tz: 0, ty: innerWidth < 760 ? 0 : -36, tx: 0 };
+let foco = null, girando = !reduzir, ultimoToque = 0;
+function encaixe() {
+  const mob = innerWidth < 760;
+  return Math.min(innerWidth / (mob ? 1050 : 1500), innerHeight / (mob ? 1250 : 1150)) * (mob ? 1.05 : 1.02);
+}
+function aplicar(voando) {
+  mundo.classList.toggle('voando', !!voando);
+  mundo.style.setProperty('--rx', cam.rx + 'deg'); mundo.style.setProperty('--rz', cam.rz + 'deg');
+  mundo.style.setProperty('--zoom', cam.zoom); mundo.style.setProperty('--tz', cam.tz + 'px'); mundo.style.setProperty('--ty', cam.ty + 'px'); mundo.style.setProperty('--tx', (cam.tx || 0) + 'px');
+  if (voando) { clearTimeout(aplicar.t); aplicar.t = setTimeout(() => mundo.classList.remove('voando'), 1150); }
+}
+function gap() { return Number($('#explodir').value); }
+function visaoGeral(voando = true) {
+  foco = null;
+  Object.values(elCamadas).forEach((e) => e.classList.remove('longe', 'focada'));
+  Object.assign(cam, { rx: 58, rz: cam.rz, zoom: encaixe(), tz: 0, ty: innerWidth < 760 ? 0 : -36, tx: 0 });
+  aplicar(voando); trilha(); acender(null);
+}
+function focarCamada(id, { manterGaveta = false } = {}) {
+  if (modo === 'mapa') return; // no mapa mental a câmera 3D fica parada
+  const c = camadas.find((x) => x.id === id);
+  foco = id;
+  for (const [k, e] of Object.entries(elCamadas)) { e.classList.toggle('longe', k !== id); e.classList.toggle('focada', k === id); }
+  const z = (c.i - 1.5) * gap();
+  const mob = innerWidth < 760;
+  Object.assign(cam, { rx: 24, rz: mob ? 0 : -8, zoom: encaixe() * (mob ? 1.05 : 1.08), tz: -z, ty: mob ? -40 : 10, tx: mob ? 0 : -Math.min(240, innerWidth * .16) });
+  girando = false; atualizarGiro();
+  aplicar(true); trilha();
+  if (!manterGaveta) abrirCamada(id);
+}
+function trilha(extra) {
+  const t = $('#trilha');
+  const partes = [`<button data-ir="geral">Arquitetura</button>`];
+  if (foco) partes.push(`<span>›</span>${extra ? `<button data-ir="${foco}">${esc(camadas.find((c) => c.id === foco).nome)}</button>` : `<b>${esc(camadas.find((c) => c.id === foco).nome)}</b>`}`);
+  if (extra) partes.push(`<span>›</span><b>${esc(extra)}</b>`);
+  t.innerHTML = partes.join(' ');
+  t.querySelectorAll('[data-ir]').forEach((b) => (b.onclick = () => { fecharGaveta(); b.dataset.ir === 'geral' ? visaoGeral() : focarCamada(b.dataset.ir); }));
+}
+
+// arrasto, giro, zoom
+const cena = $('#cena');
+let arrasto = null, moveu = false;
+const toques = new Map();
+cena.addEventListener('pointerdown', (ev) => {
+  toques.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (toques.size === 1) arrasto = { x: ev.clientX, y: ev.clientY, rx: cam.rx, rz: cam.rz };
+  else if (toques.size === 2) { const [a, b] = [...toques.values()]; arrasto = { pinca: Math.hypot(a.x - b.x, a.y - b.y), zoom: cam.zoom }; }
+  moveu = false; ultimoToque = performance.now();
+});
+addEventListener('pointermove', (ev) => {
+  if (!toques.has(ev.pointerId) || !arrasto) return;
+  toques.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+  if (arrasto.pinca && toques.size === 2) {
+    const [a, b] = [...toques.values()];
+    cam.zoom = Math.max(.25, Math.min(3, arrasto.zoom * Math.hypot(a.x - b.x, a.y - b.y) / arrasto.pinca));
+    moveu = true; aplicar(false); return;
+  }
+  const dx = ev.clientX - arrasto.x, dy = ev.clientY - arrasto.y;
+  if (!moveu && Math.hypot(dx, dy) < 5) return;
+  moveu = true; cena.classList.add('arrastando');
+  cam.rz = arrasto.rz + dx * .28; cam.rx = Math.max(0, Math.min(78, arrasto.rx - dy * .22));
+  ultimoToque = performance.now(); aplicar(false);
+});
+const soltar = (ev) => { toques.delete(ev.pointerId); if (!toques.size) { arrasto = null; cena.classList.remove('arrastando'); setTimeout(() => (moveu = false), 0); } };
+addEventListener('pointerup', soltar); addEventListener('pointercancel', soltar);
+cena.addEventListener('wheel', (ev) => { ev.preventDefault(); cam.zoom = Math.max(.25, Math.min(3, cam.zoom * Math.exp(-ev.deltaY * .0012))); ultimoToque = performance.now(); aplicar(false); }, { passive: false });
+cena.addEventListener('click', () => { if (!moveu && foco) { fecharGaveta(); visaoGeral(); } });
+$('#zoom-mais').onclick = () => { cam.zoom = Math.min(3, cam.zoom * 1.25); aplicar(true); };
+$('#zoom-menos').onclick = () => { cam.zoom = Math.max(.25, cam.zoom / 1.25); aplicar(true); };
+$('#btn-geral').onclick = () => { fecharGaveta(); sairTour(); visaoGeral(); };
+function atualizarGiro() { $('#girar').setAttribute('aria-pressed', String(girando)); $('#girar').style.borderColor = girando ? 'var(--loja)' : ''; }
+$('#girar').onclick = () => { girando = !girando; atualizarGiro(); };
+atualizarGiro();
+$('#explodir').addEventListener('input', () => {
+  mundo.style.setProperty('--gap', gap() + 'px');
+  feixes.forEach((f) => f._atualizar());
+  if (foco) { const c = camadas.find((x) => x.id === foco); cam.tz = -(c.i - 1.5) * gap(); aplicar(false); }
+});
+mundo.style.setProperty('--gap', gap() + 'px');
+(function girar(t) {
+  if (modo === '3d' && girando && !foco && !arrasto && performance.now() - ultimoToque > 2500 && !mundo.classList.contains('voando')) { cam.rz += .035; aplicar(false); }
+  requestAnimationFrame(girar);
+})();
+addEventListener('resize', () => { if (!foco) { cam.zoom = encaixe(); aplicar(false); } });
+
+// ---------------------------------------------------------------- gaveta
+const gaveta = $('#gaveta');
+let digitando = null, relogio = null;
+function abrirGaveta(cor, tipo, titulo, texto, corpo) {
+  clearInterval(digitando); clearInterval(relogio);
+  gaveta.style.setProperty('--cor', cor);
+  gaveta.innerHTML = `<div class="gaveta-topo"><div class="tipo">${esc(tipo)}</div><h3>${esc(titulo)}</h3>${texto ? `<p>${esc(texto)}</p>` : ''}<button class="fechar" aria-label="Fechar">✕</button></div><div class="gaveta-corpo">${corpo}</div>`;
+  gaveta.classList.add('aberta'); document.body.classList.add('com-gaveta');
+  gaveta.querySelector('.fechar').onclick = () => fecharGaveta();
+  gaveta.querySelectorAll('[data-modulo]').forEach((b) => (b.onclick = () => abrirModulo(b.dataset.modulo)));
+  gaveta.querySelectorAll('[data-externo]').forEach((b) => (b.onclick = () => abrirExterno(b.dataset.externo)));
+}
+function fecharGaveta() { gaveta.classList.remove('aberta'); document.body.classList.remove('com-gaveta'); clearInterval(digitando); clearInterval(relogio); Object.values(pecas).forEach((p) => p.classList.remove('ativa')); acender(null); }
+const chipModulo = (id) => { const m = porId[id]; return m ? `<button class="chip chip-ir" data-modulo="${esc(id)}"><span class="bola" style="background:${COR[m.grupo]}"></span>${esc(m.nome)}</button>` : ''; };
+const chipExterno = (id) => { const x = externos.find((e) => e.id === id); return x ? `<button class="chip chip-ir" data-externo="${esc(id)}"><span class="bola" style="background:var(--externo)"></span>${esc(x.nome)}</button>` : ''; };
+
+function abrirCamada(id) {
+  const c = camadas.find((x) => x.id === id);
+  let corpo = '';
+  if (id === 'extensoes') {
+    corpo = `<div class="metricas"><div class="metrica"><b>${modulos.length}</b><span>módulos</span></div><div class="metrica"><b>${D.ligacoes.length}</b><span>ligações</span></div><div class="metrica"><b>${fmt(T.linhas)}</b><span>linhas</span></div></div>
+      ${grupos.map((g) => `<h4>${NOME_GRUPO[g]}</h4><div class="chips">${modulos.filter((m) => m.grupo === g).map((m) => chipModulo(m.id)).join('')}</div>`).join('')}
+      <h4>Serviços externos</h4><div class="chips">${externos.map((x) => chipExterno(x.id)).join('')}</div>`;
+  } else if (id === 'dados') {
+    const gat = D.modulos.flatMap((m) => m.gatilhos.map((g) => ({ ...g, m })));
+    corpo = `<div class="metricas"><div class="metrica"><b>${T.tabelas}</b><span>tabelas</span></div><div class="metrica"><b>${T.gatilhos}</b><span>gatilhos</span></div><div class="metrica"><b>${D.tabelasNucleo.length}</b><span>do núcleo ampliadas</span></div></div>
+      <h4>Gatilhos: regras dentro do banco</h4><ul class="lista">${gat.map((g) => `<li><div><div class="t">${g.momento === 'antes' ? 'Antes' : 'Depois'} de ${esc(g.quando)} em <span class="mono">${esc(g.tabela)}</span></div><div class="s">${esc(g.m.nome)}</div></div></li>`).join('')}</ul>
+      <h4>Tabelas do núcleo que os módulos ampliam</h4><div class="chips">${D.tabelasNucleo.map((t) => `<span class="chip mono">${esc(t.tabela)}</span>`).join('')}</div>`;
+  } else if (id === 'nucleo') {
+    corpo = `<ul class="lista">${nucleoInfo.map((n) => `<li><div><div class="t">${esc(n.nome)}</div><div class="s">${esc(n.texto)}</div></div><span class="contagem">${esc(n.valor)}</span></li>`).join('')}</ul>`;
+  } else {
+    corpo = `<p class="vazio">Clique numa das superfícies para ver o que ela entrega.</p><h4>Base técnica</h4><div class="chips">${D.pilha.map((p) => `<span class="chip">${esc(p)}</span>`).join('')}</div>`;
+  }
+  abrirGaveta(c.cor, `Camada 0${4 - c.i}`, c.nome, c.texto, corpo);
+}
+function abrirNucleo(id) {
+  const n = nucleoInfo.find((x) => x.id === id);
+  if (foco !== 'nucleo') focarCamada('nucleo', { manterGaveta: true });
+  trilha(n.nome);
+  abrirGaveta('var(--nucleo)', 'Núcleo', n.nome, n.texto, `<div class="metricas"><div class="metrica" style="grid-column:span 3"><b>${esc(n.valor)}</b><span>${esc(n.rotulo)}</span></div></div>`);
+}
+function abrirZona(z) {
+  if (foco !== 'experiencia') focarCamada('experiencia', { manterGaveta: true });
+  trilha(z.nome);
+  abrirGaveta('var(--experiencia)', 'Experiência', z.nome, z.texto, `<div class="metricas"><div class="metrica" style="grid-column:span 3"><b>${esc(z.valor)}</b><span>${esc(z.rotulo)}</span></div></div>`);
+}
+function abrirExterno(id) {
+  const x = externos.find((e) => e.id === id);
+  Object.values(pecas).forEach((p) => p.classList.remove('ativa')); pecas['x:' + id]?.classList.add('ativa'); acender('x:' + id);
+  if (foco !== 'extensoes') focarCamada('extensoes', { manterGaveta: true });
+  trilha(x.nome);
+  abrirGaveta('var(--externo)', 'Serviço externo', x.nome, x.papel + '. Credenciais guardadas cifradas, fora do código.', `<h4>Módulos que conversam com ${esc(x.nome)}</h4><div class="chips">${x.usadoPor.map(chipModulo).join('')}</div>`);
+  acender('x:' + id);
+}
+
+function proximaExecucao(cron) {
+  const [min, hora, dia, mes, sem] = cron.split(/\s+/);
+  if (dia !== '*' || mes !== '*' || sem !== '*') return null;
+  const agora = new Date(), d = new Date(agora); d.setSeconds(0, 0);
+  for (let i = 1; i <= 60 * 24 + 1; i++) {
+    d.setMinutes(d.getMinutes() + (i === 1 ? 1 : 1));
+    const ok = (campo, v) => campo === '*' || (campo.startsWith('*/') ? v % Number(campo.slice(2)) === 0 : campo.split(',').map(Number).includes(v));
+    if (ok(min, d.getMinutes()) && ok(hora, d.getHours())) return d;
+  }
+  return null;
+}
+function destacar(codigo, lingua) {
+  let h = esc(codigo);
+  const marcas = [];
+  // Marcador = um caractere de uso privado por trecho já colorido: não tem dígitos nem letras para os próximos passos pegarem.
+  const guarda = (cls) => (m) => { marcas.push(`<span class="${cls}">${m}</span>`); return String.fromCharCode(0xE000 + marcas.length - 1); };
+  h = h.replace(/(\/\/[^\n]*|--[^\n]*|#[^\n]*)/g, (m) => (lingua === 'graphql' && m.startsWith('#')) || m.startsWith('//') || (lingua === 'sql' && m.startsWith('--')) ? guarda('c')(m) : m);
+  h = h.replace(/(&#39;[^\n]*?&#39;|&quot;[^\n]*?&quot;|`[^`]*`)/g, guarda('s2'));
+  const kw = lingua === 'sql'
+    ? /\b(CREATE|TABLE|IF|NOT|EXISTS|PRIMARY|KEY|REFERENCES|ON|DELETE|CASCADE|DEFAULT|NULL|UNIQUE|TRIGGER|BEFORE|AFTER|INSERT|UPDATE|OR|FOR|EACH|ROW|EXECUTE|FUNCTION|PROCEDURE|GENERATED|ALWAYS|AS|IDENTITY|INTEGER|SERIAL|TEXT|BOOLEAN|VARCHAR|NUMERIC|TIMESTAMPTZ|BIGINT|SMALLINT|JSONB|UUID|true|false)\b/g
+    : lingua === 'graphql' ? /\b(type|extend|input|enum|query|mutation|String|Int|Float|Boolean|ID)\b/g
+    : /\b(const|let|var|function|async|await|return|if|else|export|import|from|default|new|true|false|null|undefined|this)\b/g;
+  h = h.replace(kw, guarda('k'));
+  h = h.replace(/\b(\d+(?:\.\d+)?)\b/g, guarda('n'));
+  h = h.replace(/\b([a-zA-Z_]\w*)(?=\()/g, guarda('f'));
+  const voltar = (t) => t.replace(/[-]/g, (c) => voltar(marcas[c.charCodeAt(0) - 0xE000]));
+  return voltar(h);
+}
+function digitar(pre, codigo, lingua) {
+  clearInterval(digitando);
+  if (reduzir) { pre.innerHTML = destacar(codigo, lingua); return; }
+  let n = 0;
+  const passo = Math.max(2, Math.round(codigo.length / 70));
+  digitando = setInterval(() => {
+    n = Math.min(codigo.length, n + passo);
+    pre.innerHTML = destacar(codigo.slice(0, n), lingua) + (n < codigo.length ? '<span class="cursor"></span>' : '');
+    if (n >= codigo.length) clearInterval(digitando);
+  }, 22);
+}
+
+function abrirModulo(id) {
+  const m = porId[id]; if (!m) return;
+  if (foco !== 'extensoes') focarCamada('extensoes', { manterGaveta: true });
+  trilha(m.nome);
+  Object.values(pecas).forEach((p) => p.classList.remove('ativa')); pecas[id].classList.add('ativa');
+  const saem = D.ligacoes.filter((l) => l.de === id), chegam = D.ligacoes.filter((l) => l.para === id);
+  const h = m.historia;
+  const corpo = `
+    <div class="metricas">
+      <div class="metrica"><b>${fmt(m.linhas)}</b><span>linhas</span></div>
+      <div class="metrica"><b>${m.telas.length + m.telasAmpliadas}</b><span>telas</span></div>
+      <div class="metrica"><b>${m.apis}</b><span>APIs</span></div>
+      <div class="metrica"><b>${m.tabelas.length}</b><span>tabelas</span></div>
+      <div class="metrica"><b>${m.gatilhos.length}</b><span>gatilhos</span></div>
+      <div class="metrica"><b>${m.testes}</b><span>testes</span></div>
+    </div>
+    ${h && h.commits ? `<h4>Evolução</h4><div class="linha-tempo"><span><b>${h.commits}</b> commits</span><span>desde <b>${data(h.desde)}</b></span><span>última mudança <b>${data(h.ultima)}</b></span></div>` : ''}
+    ${m.trecho ? `<h4>Código real</h4><div class="codigo"><div class="codigo-topo"><i></i><i></i><i></i><span>${esc(m.id)}/${esc(m.trecho.arquivo)}</span></div><pre id="pre-codigo"></pre></div>` : ''}
+    ${m.rotinas.length ? `<h4>Rotinas rodando agora</h4><ul class="lista">${m.rotinas.map((r, k) => `<li><div><div class="t">${esc(r.quando)}</div><div class="s mono">${esc(r.nome)} · ${esc(r.agenda)}</div></div><span class="contagem" data-rotina="${k}">…</span></li>`).join('')}</ul>` : ''}
+    ${m.gatilhos.length ? `<h4>Gatilhos no banco</h4><ul class="lista">${m.gatilhos.map((g) => `<li><div><div class="t">${g.momento === 'antes' ? 'Antes' : 'Depois'} de ${esc(g.quando)}</div><div class="s mono">${esc(g.tabela)}</div></div></li>`).join('')}</ul>` : ''}
+    ${m.tabelas.length + m.visoes.length + m.colunas.length ? `<h4>Dados</h4><div class="chips">${[...m.tabelas, ...m.visoes, ...m.colunas].map((t) => `<span class="chip mono">${esc(t)}</span>`).join('')}</div>` : ''}
+    ${m.telas.length ? `<h4>Telas</h4><div class="chips">${m.telas.map((t) => `<span class="chip">${esc(t.nome)} <small style="color:var(--texto-3)">${t.onde}</small></span>`).join('')}</div>` : ''}
+    ${saem.length ? `<h4>Usa</h4><div class="chips">${saem.map((l) => chipModulo(l.para)).join('')}</div>` : ''}
+    ${chegam.length ? `<h4>É usado por</h4><div class="chips">${chegam.map((l) => chipModulo(l.de)).join('')}</div>` : ''}
+    ${m.externos.length ? `<h4>Fala com</h4><div class="chips">${m.externos.map(chipExterno).join('')}</div>` : ''}`;
+  abrirGaveta(COR[m.grupo], `Módulo · ${NOME_GRUPO[m.grupo] || 'Loja'}`, m.nome, m.descricao, corpo);
+  acender(id);
+  const pre = $('#pre-codigo'); if (pre && m.trecho) digitar(pre, m.trecho.codigo, m.trecho.lingua);
+  if (m.rotinas.length) {
+    const tic = () => m.rotinas.forEach((r, k) => {
+      const el = gaveta.querySelector(`[data-rotina="${k}"]`); if (!el) return;
+      const p = proximaExecucao(r.agenda);
+      if (!p) { el.textContent = r.quando; return; }
+      const s = Math.max(0, Math.round((p - new Date()) / 1000));
+      el.textContent = 'próxima em ' + (s >= 3600 ? `${Math.floor(s / 3600)}h${String(Math.floor(s % 3600 / 60)).padStart(2, '0')}` : `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`);
+    });
+    tic(); relogio = setInterval(tic, 1000);
+  }
+}
+
+// ---------------------------------------------------------------- números e "vivo"
+(() => {
+  const nums = [[modulos.length, 'módulos'], [T.totalTelasAdmin, 'telas no painel'], [T.apis, 'APIs'], [T.tabelas, 'tabelas'], [T.gatilhos, 'gatilhos'], [fmt(T.linhas), 'linhas']];
+  $('#numeros').innerHTML = nums.map(([n, r]) => `<div class="numero"><b data-alvo="${String(n).replace(/\D/g, '')}">${n}</b><span>${r}</span></div>`).join('');
+  if (!reduzir) document.querySelectorAll('[data-alvo]').forEach((b) => {
+    const alvo = Number(b.dataset.alvo), t0 = performance.now();
+    const passo = (t) => { const p = Math.min(1, (t - t0) / 1400), e = 1 - Math.pow(1 - p, 3); b.textContent = fmt(Math.round(alvo * e)); if (p < 1) requestAnimationFrame(passo); };
+    requestAnimationFrame(passo);
+  });
+  const h = D.historia;
+  if (!h) { $('#vivo').remove(); return; }
+  const max = Math.max(...h.porSemana, 1), n = h.porSemana.length, larg = 234;
+  const barras = h.porSemana.map((v, i) => { const bh = Math.max(2, v / max * 30); const bw = Math.max(3, larg / n - 3); return `<rect x="${i * (larg / n)}" y="${34 - bh}" width="${bw}" height="${bh}" rx="1.5" class="${i === n - 1 ? 'barra atual' : 'barra'}"/>`; }).join('');
+  $('#vivo').innerHTML = `<div class="vivo-topo"><span class="pulso"></span><span>Atualizada sozinha a cada mudança</span></div>
+    <svg viewBox="0 0 ${larg} 34" preserveAspectRatio="none" aria-label="Mudanças por semana">${barras}</svg>
+    <small><b style="color:var(--texto)">${fmt(h.commits)}</b> mudanças desde ${data(h.inicio)} · versão <span class="mono">${esc(h.versao)}</span> · ${data(h.ultima)}</small>`;
+})();
+
+// ---------------------------------------------------------------- apresentação
+const maisGatilhos = [...modulos].sort((a, b) => b.gatilhos.length - a.gatilhos.length || b.linhas - a.linhas)[0];
+const passos = [
+  { titulo: `${D.projeto}: uma loja em quatro camadas`, texto: `${modulos.length} módulos, ${T.apis} APIs, ${T.tabelas} tabelas e ${fmt(T.linhas)} linhas, organizados em camadas que se encaixam.`, acao: () => { fecharGaveta(); visaoGeral(); cam.rz = -38; aplicar(true); } },
+  { titulo: 'Experiência', texto: `Loja, painel com ${T.totalTelasAdmin} telas (todas com ajuda embutida), APIs e e-mails: tudo o que pessoas e sistemas usam.`, acao: () => { focarCamada('experiencia', { manterGaveta: true }); fecharGaveta(); } },
+  { titulo: 'Módulos independentes', texto: 'Cada função de negócio é um módulo com rotas, telas, banco e testes próprios. Liga, desliga e evolui sem mexer no resto.', acao: () => { focarCamada('extensoes', { manterGaveta: true }); fecharGaveta(); acender(null); } },
+  { titulo: 'Conversam sem se acoplar', texto: `${D.ligacoes.length} ligações mapeadas do código: tabelas, APIs e áreas compartilhadas, cada uma rastreável.`, acao: () => { focarCamada('extensoes', { manterGaveta: true }); fecharGaveta(); acender('notificacoes'); } },
+  { titulo: 'Núcleo próprio', texto: 'Rotas, áreas de componentes, GraphQL, rotinas agendadas e migrações: a plataforma é nossa, sem depender de fornecedor.', acao: () => { focarCamada('nucleo', { manterGaveta: true }); fecharGaveta(); } },
+  { titulo: 'Regras no banco', texto: `${T.gatilhos} gatilhos garantem estoque, preço e avisos em qualquer gravação, venha ela do painel, do ERP ou de um script.`, acao: () => { focarCamada('dados', { manterGaveta: true }); fecharGaveta(); } },
+  { titulo: `${externos.length} integrações`, texto: externos.map((x) => x.nome).join(', ') + '. Credenciais cifradas e modo simulado quando a conta ainda não está ligada.', acao: () => { visaoGeral(); cam.rx = 40; cam.zoom = encaixe() * 1.08; aplicar(true); acender(null); } },
+  { titulo: 'Código vivo', texto: `Por dentro de ${maisGatilhos.nome}: o trecho abaixo sai direto do repositório.`, acao: () => abrirModulo(maisGatilhos.id) },
+  { titulo: 'Arquitetura que se atualiza sozinha', texto: D.historia ? `Gerada do código a cada mudança. ${fmt(D.historia.commits)} mudanças desde ${data(D.historia.inicio)}, a última em ${data(D.historia.ultima)}.` : 'Gerada do código a cada mudança.', acao: () => { fecharGaveta(); visaoGeral(); girando = true; atualizarGiro(); } }
+];
+let passo = -1, autoTour = null;
+$('#pontos-tour').innerHTML = passos.map(() => '<i></i>').join('');
+function irPasso(i) {
+  passo = (i + passos.length) % passos.length;
+  document.body.classList.add('apresentando');
+  passos[passo].acao();
+  const leg = $('#legenda'); leg.classList.remove('visivel');
+  setTimeout(() => {
+    $('#leg-passo').textContent = `${String(passo + 1).padStart(2, '0')} / ${String(passos.length).padStart(2, '0')}`;
+    $('#leg-titulo').textContent = passos[passo].titulo; $('#leg-texto').textContent = passos[passo].texto;
+    leg.classList.add('visivel');
+  }, 250);
+  document.querySelectorAll('#pontos-tour i').forEach((p, k) => p.classList.toggle('atual', k === passo));
+}
+function sairTour() {
+  if (passo < 0) return;
+  passo = -1; clearInterval(autoTour); autoTour = null; $('#tour-auto').setAttribute('aria-pressed', 'false');
+  document.body.classList.remove('apresentando'); $('#legenda').classList.remove('visivel');
+  if (document.fullscreenElement) document.exitFullscreen?.();
+}
+$('#btn-apresentar').onclick = () => { if (modo === 'mapa') trocarModo('3d'); document.documentElement.requestFullscreen?.().catch(() => {}); irPasso(0); };
+$('#tour-prox').onclick = () => irPasso(passo + 1);
+$('#tour-ant').onclick = () => irPasso(passo - 1);
+$('#tour-sair').onclick = () => { sairTour(); fecharGaveta(); visaoGeral(); };
+$('#tour-auto').onclick = (ev) => {
+  if (autoTour) { clearInterval(autoTour); autoTour = null; ev.currentTarget.setAttribute('aria-pressed', 'false'); return; }
+  ev.currentTarget.setAttribute('aria-pressed', 'true'); autoTour = setInterval(() => irPasso(passo + 1), 7000);
+};
+addEventListener('keydown', (ev) => {
+  if (passo >= 0) {
+    if (ev.key === 'ArrowRight' || ev.key === ' ' || ev.key === 'PageDown') { ev.preventDefault(); irPasso(passo + 1); }
+    else if (ev.key === 'ArrowLeft' || ev.key === 'PageUp') { ev.preventDefault(); irPasso(passo - 1); }
+    else if (ev.key === 'Escape') { sairTour(); fecharGaveta(); visaoGeral(); }
+    return;
+  }
+  if (ev.key === 'Escape') { if (gaveta.classList.contains('aberta')) fecharGaveta(); else visaoGeral(); }
+  else if (ev.key === '0') { fecharGaveta(); visaoGeral(); }
+  else if (ev.key === 'p' || ev.key === 'P') $('#btn-apresentar').click();
+  else if (ev.key === 'v' || ev.key === 'V') trocarVisual();
+  else if (['1', '2', '3', '4'].includes(ev.key)) focarCamada(camadas[4 - Number(ev.key)].id);
+});
+document.addEventListener('fullscreenchange', () => { if (!foco) { cam.zoom = encaixe(); aplicar(false); } });
+
+// ---------------------------------------------------------------- visual (futurista / minimalista)
+const ICONE_MIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 10h8M8 14h5"/></svg>';
+const ICONE_FUT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 17l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></svg>';
+function mostrarVisual() {
+  const min = document.documentElement.dataset.visual === 'minimal';
+  const b = $('#btn-visual');
+  b.innerHTML = (min ? ICONE_FUT : ICONE_MIN) + `<span>${min ? 'Futurista' : 'Minimalista'}</span>`;
+  b.setAttribute('aria-label', min ? 'Trocar para o visual futurista' : 'Trocar para o visual minimalista');
+  document.querySelector('meta[name="theme-color"]').content = min ? '#f3f1ec' : '#07080c';
+}
+function trocarVisual() {
+  const raiz = document.documentElement;
+  const min = raiz.dataset.visual !== 'minimal';
+  if (min) raiz.dataset.visual = 'minimal'; else delete raiz.dataset.visual;
+  try { localStorage.setItem('arquitetura-visual', min ? 'minimal' : 'futurista'); } catch (_) {}
+  try { const u = new URL(location.href); u.searchParams.set('visual', min ? 'minimalista' : 'futurista'); history.replaceState(null, '', u); } catch (_) {}
+  mostrarVisual();
+}
+$('#btn-visual').onclick = trocarVisual;
+mostrarVisual();
+
+// ================================================================ mapa mental
+// Árvore montada dos mesmos dados; cada ramo abre e recolhe com animação. Lado direito:
+// Experiência, Módulos e Integrações; esquerdo: Núcleo e Dados.
+const mm = (() => {
+  const no = (id, nome, opc = {}) => ({ id, nome, filhos: [], ...opc });
+  const raiz = no('raiz', D.projeto, { sub: D.subtitulo, cor: 'var(--loja)', aberto: true });
+  const add = (pai, filho) => { filho.pai = pai; filho.cor = filho.cor || pai.cor; pai.filhos.push(filho); return filho; };
+  const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+
+  const exp = add(raiz, no('exp', 'Experiência', { sub: 'o que pessoas e sistemas usam', cor: 'var(--experiencia)', lado: 1, acao: () => abrirCamada('experiencia') }));
+  const mod = add(raiz, no('mod', 'Módulos', { sub: `${modulos.length} módulos plugados no núcleo`, cor: 'var(--extensoes)', lado: 1, acao: () => abrirCamada('extensoes') }));
+  const nuc = add(raiz, no('nuc', 'Núcleo', { sub: 'motor próprio', cor: 'var(--nucleo)', lado: -1, acao: () => abrirCamada('nucleo') }));
+  const dad = add(raiz, no('dad', 'Dados', { sub: `${T.tabelas} tabelas · ${T.gatilhos} gatilhos`, cor: 'var(--dados)', lado: -1, acao: () => abrirCamada('dados') }));
+  const ext = add(raiz, no('ext', 'Integrações', { sub: `${externos.length} serviços externos`, cor: 'var(--externo)', lado: 1 }));
+
+  // Experiência: superfícies → telas
+  for (const z of zonasExperiencia) {
+    const zn = add(exp, no('z:' + z.nome, z.nome, { sub: `${z.valor} ${z.rotulo}`, acao: () => abrirZona(z) }));
+    if (z.nome === 'Loja' || z.nome === 'Painel') {
+      const onde = z.nome === 'Loja' ? 'loja' : 'painel';
+      for (const m of modulos) {
+        const telas = m.telas.filter((t) => t.onde === onde);
+        if (!telas.length) continue;
+        const mn = add(zn, no(`z:${onde}:${m.id}`, m.nome, { sub: plural(telas.length, 'tela', 'telas'), cor: COR[m.grupo] }));
+        for (const t of telas) add(mn, no(`z:${onde}:${m.id}:${t.nome}`, t.nome));
+      }
+    } else if (z.nome === 'APIs') {
+      for (const m of modulos.filter((x) => x.apis)) add(zn, no('z:api:' + m.id, m.nome, { sub: plural(m.apis, 'rota', 'rotas'), cor: COR[m.grupo] }));
+    }
+  }
+  // Módulos: grupos → módulo → anatomia
+  for (const g of grupos) {
+    const ms = modulos.filter((m) => m.grupo === g);
+    if (!ms.length) continue;
+    const gn = add(mod, no('g:' + g, NOME_GRUPO[g], { sub: plural(ms.length, 'módulo', 'módulos'), cor: COR[g] }));
+    for (const m of ms) {
+      const mn = add(gn, no('m:' + m.id, m.nome, { sub: resumoModulo(m), acao: () => abrirModulo(m.id) }));
+      const ramo = (id, nome, itens, opc = {}) => {
+        if (!itens.length) return;
+        const r = add(mn, no(`m:${m.id}:${id}`, nome, { sub: String(itens.length) }));
+        for (const it of itens) add(r, no(`m:${m.id}:${id}:${it.chave ?? it}`, it.nome ?? it, { mono: opc.mono, acao: it.acao }));
+      };
+      ramo('telas', 'Telas', m.telas.map((t) => ({ nome: `${t.nome} · ${t.onde}`, chave: t.onde + t.nome })));
+      ramo('dados', 'Tabelas', [...m.tabelas, ...m.visoes, ...m.colunas], { mono: true });
+      ramo('gat', 'Gatilhos', m.gatilhos.map((x, k) => ({ nome: `${x.momento === 'antes' ? 'Antes' : 'Depois'} de ${x.quando} em ${x.tabela}`, chave: k })));
+      ramo('rot', 'Rotinas', m.rotinas.map((r) => ({ nome: `${r.nome} · ${r.quando}`, chave: r.nome })));
+      ramo('usa', 'Usa', D.ligacoes.filter((l) => l.de === m.id).map((l) => ({ nome: porId[l.para]?.nome ?? l.para, chave: l.para, acao: () => abrirModulo(l.para) })));
+      ramo('fala', 'Fala com', m.externos.map((x) => ({ nome: externos.find((e) => e.id === x)?.nome ?? x, chave: x, acao: () => abrirExterno(x) })));
+    }
+  }
+  // Núcleo: conceitos
+  for (const n of nucleoInfo) add(nuc, no('n:' + n.id, n.nome, { sub: `${n.valor} ${n.rotulo}`, acao: () => abrirNucleo(n.id) }));
+  // Dados: tabelas por módulo + núcleo
+  for (const m of modulos) {
+    const itens = [...m.tabelas, ...m.visoes];
+    if (!itens.length && !m.gatilhos.length) continue;
+    const mn = add(dad, no('d:' + m.id, m.nome, { sub: [itens.length && plural(itens.length, 'tabela', 'tabelas'), m.gatilhos.length && plural(m.gatilhos.length, 'gatilho', 'gatilhos')].filter(Boolean).join(' · '), cor: COR[m.grupo] }));
+    for (const t of itens) add(mn, no(`d:${m.id}:${t}`, t, { mono: true }));
+    for (const [k, x] of m.gatilhos.entries()) add(mn, no(`d:${m.id}:g${k}`, `⚡ ${x.momento} de ${x.quando} em ${x.tabela}`));
+  }
+  if (D.tabelasNucleo.length) {
+    const tn = add(dad, no('d:nucleo', 'Tabelas do núcleo ampliadas', { sub: String(D.tabelasNucleo.length), cor: 'var(--nucleo)' }));
+    for (const t of D.tabelasNucleo) add(tn, no('d:nucleo:' + t.tabela, t.tabela, { mono: true, sub: t.por.map((p) => porId[p]?.nome ?? p).join(', ') }));
+  }
+  // Integrações: serviço → módulos
+  for (const x of externos) {
+    const xn = add(ext, no('x:' + x.id, x.nome, { sub: x.papel, acao: () => abrirExterno(x.id) }));
+    for (const u of x.usadoPor) add(xn, no(`x:${x.id}:${u}`, porId[u]?.nome ?? u, { cor: COR[porId[u]?.grupo], acao: () => abrirModulo(u) }));
+  }
+
+  // ------------------------------------------------ medidas
+  const regua = document.createElement('canvas').getContext('2d');
+  const largura = (t, fonte) => { regua.font = fonte; return regua.measureText(t).width; };
+  const todos = [];
+  function medir() { andar(raiz, 0); }
+  function andar(n, nivel) {
+    n.nivel = nivel;
+    n.lado = n.lado ?? n.pai?.lado ?? 0;
+    const fonte = nivel === 0 ? '800 18px Inter, sans-serif' : nivel === 1 ? '700 15px Inter, sans-serif' : n.mono ? '400 11.5px "JetBrains Mono", monospace' : `${n.filhos.length ? 600 : 500} 13px Inter, sans-serif`;
+    const tw = Math.max(largura(n.nome, fonte), n.sub ? largura(n.sub, '400 11px Inter, sans-serif') : 0);
+    n.w = Math.min(nivel === 0 ? 320 : n.filhos.length ? 290 : 400, Math.ceil(tw) + 46 + (n.filhos.length ? 34 : 0));
+    n.h = nivel === 0 ? 62 : nivel === 1 ? 50 : n.sub ? 42 : 30;
+    n.filhos.forEach((f) => andar(f, nivel + 1));
+  }
+  medir();
+  (function juntar(n) { todos.push(n); n.filhos.forEach(juntar); })(raiz);
+  const porNo = new Map(todos.map((n) => [n.id, n]));
+  for (const n of todos) if (n.nivel === 1) n.aberto = true;
+
+  // ------------------------------------------------ layout
+  const GAP = 10, PASSO_X = 60;
+  function altura(n) {
+    if (!n.aberto || !n.filhos.length) return n.h;
+    const soma = n.filhos.reduce((s, f) => s + altura(f), 0) + GAP * (n.filhos.length - 1);
+    return Math.max(n.h, soma);
+  }
+  function posicionar() {
+    for (const n of todos) n.visivel = false;
+    raiz.x = 0; raiz.y = 0; raiz.visivel = true;
+    for (const lado of [1, -1]) {
+      const ramos = raiz.filhos.filter((f) => f.lado === lado);
+      const total = ramos.reduce((s, f) => s + altura(f), 0) + GAP * 3 * (ramos.length - 1);
+      let y = -total / 2;
+      for (const f of ramos) {
+        const a = altura(f);
+        colocar(f, raiz, y + a / 2);
+        y += a + GAP * 3;
+      }
+    }
+  }
+  function colocar(n, pai, y) {
+    n.visivel = true; n.y = y;
+    n.x = pai.x + n.lado * (pai.w / 2 + PASSO_X + n.w / 2);
+    if (!n.aberto) return;
+    let topo = y - altura(n) / 2;
+    if (n.h > n.filhos.reduce((s, f) => s + altura(f), 0) + GAP * (n.filhos.length - 1)) topo = y - (n.filhos.reduce((s, f) => s + altura(f), 0) + GAP * (n.filhos.length - 1)) / 2;
+    for (const f of n.filhos) { const a = altura(f); colocar(f, n, topo + a / 2); topo += a + GAP; }
+  }
+  const visivelPai = (n) => { let p = n.pai; while (p && !p.visivel) p = p.pai; return p || raiz; };
+
+  // ------------------------------------------------ desenho
+  const caixa = $('#mapa-mental'), mundoMM = $('#mm-mundo'), linhas = $('#mm-linhas'), camada = $('#mm-nos');
+  const els = new Map(); // id → { el, x, y, op }
+  const vista = { x: 0, y: 0, k: 1 };
+  const aplicarVista = () => { mundoMM.style.transform = `translate(${vista.x}px, ${vista.y}px) scale(${vista.k})`; };
+
+  function criarEl(n) {
+    const el = document.createElement('div');
+    el.className = `mm-no nivel-${Math.min(n.nivel, 2)}${n.lado < 0 ? ' lado-esq' : ''}${n.filhos.length ? '' : ' folha'}${n.mono ? ' mono' : ''}`;
+    el.style.setProperty('--cor', n.cor);
+    el.style.width = n.w + (n.acao && n.filhos.length ? 28 : 0) + 'px'; el.style.height = n.h + 'px';
+    const b = document.createElement('button');
+    b.className = 'mm-rotulo'; b.type = 'button';
+    b.setAttribute('role', 'treeitem');
+    b.innerHTML = `${n.nivel > 0 ? '<span class="ponta"></span>' : ''}<span class="txt"><b>${esc(n.nome)}</b>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}</span>${n.filhos.length ? '<span class="qtd"></span>' : ''}`;
+    b.title = n.nome + (n.sub ? ' · ' + n.sub : '');
+    b.addEventListener('click', (ev) => {
+      ev.stopPropagation(); if (moveuMM) return;
+      if (n.filhos.length) alternar(n); else if (n.acao) n.acao();
+    });
+    b.addEventListener('dblclick', (ev) => { ev.stopPropagation(); n.acao?.(); });
+    el.appendChild(b);
+    if (n.acao && n.filhos.length) {
+      const i = document.createElement('button');
+      i.className = 'mm-info'; i.type = 'button'; i.textContent = 'i';
+      i.setAttribute('aria-label', 'Detalhes de ' + n.nome); i.title = 'Detalhes';
+      i.addEventListener('click', (ev) => { ev.stopPropagation(); if (!moveuMM) n.acao(); });
+      el.appendChild(i);
+    }
+    camada.appendChild(el);
+    return el;
+  }
+  function atualizarEl(n, el) {
+    el.classList.toggle('aberto', !!n.aberto);
+    const b = el.firstChild;
+    if (n.filhos.length) {
+      b.setAttribute('aria-expanded', String(!!n.aberto));
+      b.querySelector('.qtd').textContent = n.aberto ? '−' : n.filhos.length;
+      b.setAttribute('aria-label', `${n.nome}${n.sub ? ', ' + n.sub : ''}. ${n.aberto ? 'Aberto' : `${n.filhos.length} itens recolhidos`}`);
+    }
+  }
+  const largEl = (n) => n.w + (n.acao && n.filhos.length ? 28 : 0);
+  function colocarEl(n, s) {
+    const lx = n.lado < 0 ? s.x - largEl(n) + n.w / 2 : s.x - n.w / 2;
+    s.el.style.transform = `translate(${lx}px, ${s.y - n.h / 2}px)`;
+    s.el.style.opacity = s.op;
+  }
+  function caminho(p, ps, f, fs) {
+    const lado = f.lado || 1;
+    const x1 = ps.x + lado * p.w / 2, y1 = ps.y, x2 = fs.x - lado * f.w / 2, y2 = fs.y;
+    const dx = (x2 - x1) * .5;
+    return `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
+  }
+
+  let animacao = null;
+  function desenhar(foco, animar = true) {
+    const antes = foco ? { x: foco.x, y: foco.y } : null;
+    posicionar();
+    // compensa a vista para o ramo clicado ficar no mesmo lugar da tela
+    const alvoVista = { ...vista };
+    if (foco && antes) { alvoVista.x -= (foco.x - antes.x) * vista.k; alvoVista.y -= (foco.y - antes.y) * vista.k; }
+    const alvos = new Map();
+    for (const n of todos) {
+      let s = els.get(n.id);
+      if (n.visivel) {
+        if (!s) {
+          const p = visivelPai(n.pai ? n : raiz), ps = els.get(p.id);
+          s = { el: criarEl(n), x: ps ? ps.x : n.x, y: ps ? ps.y : n.y, op: 0 };
+          els.set(n.id, s);
+        }
+        atualizarEl(n, s.el);
+        alvos.set(n.id, { x: n.x, y: n.y, op: 1 });
+      } else if (s) {
+        const p = visivelPai(n);
+        alvos.set(n.id, { x: p.x, y: p.y, op: 0, sair: true });
+      }
+    }
+    const inicio = new Map([...els].map(([id, s]) => [id, { x: s.x, y: s.y, op: s.op }]));
+    const v0 = { ...vista };
+    cancelAnimationFrame(animacao);
+    const t0 = performance.now(), dur = animar && !reduzir ? 420 : 0;
+    const quadro = (t) => {
+      const p = dur ? Math.min(1, (t - t0) / dur) : 1, e = 1 - Math.pow(1 - p, 3);
+      for (const [id, s] of els) {
+        const a = alvos.get(id), i = inicio.get(id);
+        if (!a) continue;
+        s.x = i.x + (a.x - i.x) * e; s.y = i.y + (a.y - i.y) * e; s.op = i.op + (a.op - i.op) * e;
+        colocarEl(porNo.get(id), s);
+      }
+      vista.x = v0.x + (alvoVista.x - v0.x) * e; vista.y = v0.y + (alvoVista.y - v0.y) * e; aplicarVista();
+      // linhas: de cada nó presente ao pai presente
+      const porCor = new Map();
+      for (const [id, s] of els) {
+        const n = porNo.get(id);
+        if (!n.pai || s.op < .02) continue;
+        const ps = els.get(n.pai.id); if (!ps) continue;
+        const chave = n.cor + (n.nivel === 1 ? '|1' : '');
+        porCor.set(chave, (porCor.get(chave) || '') + caminho(n.pai, ps, n, s));
+      }
+      linhas.innerHTML = [...porCor].map(([c, d]) => { const [cor, raso] = c.split('|'); return `<path class="${raso ? 'raso' : ''}" style="--cor:${cor}" d="${d}"/>`; }).join('');
+      if (p < 1) animacao = requestAnimationFrame(quadro);
+      else for (const [id, a] of alvos) if (a.sair) { els.get(id).el.remove(); els.delete(id); }
+    };
+    animacao = requestAnimationFrame(quadro);
+  }
+
+  function alternar(n) {
+    n.aberto = !n.aberto;
+    if (!n.aberto) (function fechar(x) { x.filhos.forEach((f) => { f.aberto = false; fechar(f); }); })(n);
+    desenhar(n);
+  }
+  function encaixar(animar = true) {
+    const vis = todos.filter((n) => n.visivel);
+    const minX = Math.min(...vis.map((n) => n.x - largEl(n) / 2)) - 30, maxX = Math.max(...vis.map((n) => n.x + largEl(n) / 2)) + 30;
+    const minY = Math.min(...vis.map((n) => n.y - n.h / 2)) - 30, maxY = Math.max(...vis.map((n) => n.y + n.h / 2)) + 30;
+    const topo = 76, baixo = innerWidth < 760 ? 70 : 130, larg = innerWidth - (gaveta.classList.contains('aberta') && innerWidth >= 760 ? 490 : 0);
+    const k = Math.max(.3, Math.min(1.15, larg / (maxX - minX), (innerHeight - topo - baixo) / (maxY - minY)));
+    const alvo = { k, x: larg / 2 - ((minX + maxX) / 2) * k, y: topo + (innerHeight - topo - baixo) / 2 - ((minY + maxY) / 2) * k };
+    if (!animar || reduzir) { Object.assign(vista, alvo); aplicarVista(); return; }
+    const v0 = { ...vista }, t0 = performance.now();
+    const passo = (t) => { const p = Math.min(1, (t - t0) / 500), e = 1 - Math.pow(1 - p, 3); vista.x = v0.x + (alvo.x - v0.x) * e; vista.y = v0.y + (alvo.y - v0.y) * e; vista.k = v0.k + (alvo.k - v0.k) * e; aplicarVista(); if (p < 1) requestAnimationFrame(passo); };
+    requestAnimationFrame(passo);
+  }
+
+  // arrasto, zoom e pinça
+  let arrastoMM = null, moveuMM = false;
+  const toquesMM = new Map();
+  caixa.addEventListener('pointerdown', (ev) => {
+    toquesMM.set(ev.pointerId, { x: ev.clientX, y: ev.clientY }); moveuMM = false;
+    if (toquesMM.size === 1) arrastoMM = { x: ev.clientX, y: ev.clientY, vx: vista.x, vy: vista.y };
+    else if (toquesMM.size === 2) { const [a, b] = [...toquesMM.values()]; arrastoMM = { pinca: Math.hypot(a.x - b.x, a.y - b.y), k: vista.k, vx: vista.x, vy: vista.y, cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 }; }
+  });
+  addEventListener('pointermove', (ev) => {
+    if (!toquesMM.has(ev.pointerId) || !arrastoMM) return;
+    toquesMM.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+    if (arrastoMM.pinca && toquesMM.size === 2) {
+      const [a, b] = [...toquesMM.values()];
+      const k = Math.max(.2, Math.min(2.5, arrastoMM.k * Math.hypot(a.x - b.x, a.y - b.y) / arrastoMM.pinca));
+      vista.k = k; vista.x = arrastoMM.cx - ((arrastoMM.cx - arrastoMM.vx) / arrastoMM.k) * k; vista.y = arrastoMM.cy - ((arrastoMM.cy - arrastoMM.vy) / arrastoMM.k) * k;
+      moveuMM = true; aplicarVista(); return;
+    }
+    const dx = ev.clientX - arrastoMM.x, dy = ev.clientY - arrastoMM.y;
+    if (!moveuMM && Math.hypot(dx, dy) < 5) return;
+    moveuMM = true; caixa.classList.add('arrastando');
+    vista.x = arrastoMM.vx + dx; vista.y = arrastoMM.vy + dy; aplicarVista();
+  });
+  const soltarMM = (ev) => { toquesMM.delete(ev.pointerId); if (!toquesMM.size) { arrastoMM = null; caixa.classList.remove('arrastando'); setTimeout(() => (moveuMM = false), 0); } };
+  addEventListener('pointerup', soltarMM); addEventListener('pointercancel', soltarMM);
+  caixa.addEventListener('wheel', (ev) => {
+    ev.preventDefault();
+    const k = Math.max(.2, Math.min(2.5, vista.k * Math.exp(-ev.deltaY * .0013)));
+    vista.x = ev.clientX - ((ev.clientX - vista.x) / vista.k) * k; vista.y = ev.clientY - ((ev.clientY - vista.y) / vista.k) * k; vista.k = k; aplicarVista();
+  }, { passive: false });
+
+  $('#mm-expandir').onclick = () => { for (const n of todos) if (n.filhos.length) n.aberto = true; desenhar(null); setTimeout(() => encaixar(), 440); };
+  $('#mm-recolher').onclick = () => { for (const n of todos) n.aberto = n.nivel === 0; desenhar(null); setTimeout(() => encaixar(), 440); };
+  $('#mm-centro').onclick = () => encaixar();
+
+  let montado = false;
+  return {
+    mostrar() {
+      if (!montado) {
+        montado = true;
+        // mede de novo com a fonte certa (Inter) carregada, senão os rótulos saem cortados
+        const iniciar = () => { medir(); posicionar(); encaixar(false); desenhar(null); };
+        (document.fonts?.ready ?? Promise.resolve()).then(iniciar, iniciar);
+      }
+      else encaixar(false);
+    },
+    encaixar
+  };
+})();
+
+// ---------------------------------------------------------------- modo (camadas 3D / mapa mental)
+const ICONE_MAPA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.5"/><circle cx="4" cy="6" r="1.8"/><circle cx="4" cy="18" r="1.8"/><circle cx="20" cy="6" r="1.8"/><circle cx="20" cy="18" r="1.8"/><path d="M9.8 11 5.6 7.2M9.8 13l-4.2 3.8M14.2 11l4.2-3.8M14.2 13l4.2 3.8"/></svg>';
+const ICONE_3D = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5-9-5zM3 13l9 5 9-5M3 17.5l9 5 9-5"/></svg>';
+function mostrarModo() {
+  const mapa = modo === 'mapa';
+  const b = $('#btn-modo');
+  b.innerHTML = (mapa ? ICONE_3D : ICONE_MAPA) + `<span>${mapa ? 'Camadas 3D' : 'Mapa mental'}</span>`;
+  b.setAttribute('aria-label', mapa ? 'Ver em camadas 3D' : 'Ver como mapa mental');
+  document.body.classList.toggle('modo-mapa', mapa);
+  $('#mapa-mental').hidden = !mapa; $('#mm-barra').hidden = !mapa;
+}
+function trocarModo(novo) {
+  modo = novo || (modo === 'mapa' ? '3d' : 'mapa');
+  try { localStorage.setItem('arquitetura-modo', modo); } catch (_) {}
+  try { const u = new URL(location.href); if (modo === 'mapa') u.searchParams.set('modo', 'mapa'); else u.searchParams.delete('modo'); history.replaceState(null, '', u); } catch (_) {}
+  fecharGaveta();
+  mostrarModo();
+  if (modo === 'mapa') { sairTour(); mm.mostrar(); } else visaoGeral(false);
+}
+$('#btn-modo').onclick = () => trocarModo();
+addEventListener('keydown', (ev) => { if ((ev.key === 'm' || ev.key === 'M') && passo < 0 && !ev.ctrlKey && !ev.metaKey) trocarModo(); });
+addEventListener('resize', () => { if (modo === 'mapa') mm.encaixar(false); });
+(() => {
+  const q = new URLSearchParams(location.search).get('modo');
+  let inicial = q ? (/^mapa|mental/i.test(q) ? 'mapa' : '3d') : null;
+  if (!inicial) { try { inicial = localStorage.getItem('arquitetura-modo'); } catch (_) {} }
+  if (inicial === 'mapa') { modo = 'mapa'; mostrarModo(); requestAnimationFrame(() => mm.mostrar()); } else mostrarModo();
+})();
+
+// início: as camadas chegam de longe e se empilham
+cam.zoom = encaixe();
+if (!reduzir) {
+  mundo.style.setProperty('--gap', '600px'); cam.rx = 70; cam.zoom = encaixe() * .7; aplicar(false);
+  requestAnimationFrame(() => requestAnimationFrame(() => { mundo.style.setProperty('--gap', gap() + 'px'); cam.rx = 58; cam.zoom = encaixe(); aplicar(true); }));
+} else aplicar(false);
+trilha();
+</script>
+</body>
+</html>
